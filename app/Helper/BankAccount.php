@@ -69,4 +69,45 @@ class BankAccount
 
         curl_close($ch);
     }
+
+    public function verifyUserPayment($ref)
+    {
+
+        $url = "https://api.monnify.com/api/v2/transactions/" . $ref;
+
+
+
+        // Initialize a cURL session
+        $ch = curl_init();
+
+        // Set the URL for the GET request
+        curl_setopt($ch, CURLOPT_URL, $url);
+
+        // Return the response instead of outputting it
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        // Set custom headers, including the Authorization header
+        $headers =
+            $headers = array(
+                'Content-Type:application/json',
+                'Authorization: Bearer ' . $this->accessToken //
+            );
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        // Execute the GET request
+        $response = curl_exec($ch);
+
+        // Check for errors
+        if ($response === false) {
+            echo 'cURL Error: ' . curl_error($ch);
+        } else {
+            // Print the response
+
+
+            return json_decode($response, true);
+        }
+
+        // Close the cURL session
+        curl_close($ch);
+    }
 }

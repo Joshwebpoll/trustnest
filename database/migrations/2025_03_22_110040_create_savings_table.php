@@ -13,10 +13,15 @@ return new class extends Migration
     {
         Schema::create('savings', function (Blueprint $table) {
             $table->id();
-            $table->string('saving_id');
-            $table->string('amount_deposited');
-            $table->string('saving_type');
-            $table->string('savingtransaction_id');
+            $table->string('transaction_id');
+            $table->string("account_number");
+            $table->text('amount_deposited');
+            $table->enum('saving_type', ['current', 'saving']);
+            $table->enum('status', ['pending', 'completed'])->default('pending');
+            $table->string('transaction_reference')->unique();
+            $table->enum('deposit_type', ['cash', 'transfer']);
+            $table->string('processed_by');
+            $table->timestamp('deposit_date');
 
             $table->timestamps();
         });

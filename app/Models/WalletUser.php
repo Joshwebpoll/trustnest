@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 class WalletUser extends Model
 {
     protected $fillable = ["wallet_id", "wallet_balance", "balanace_before", "balanace_after", "user_id"];
-    public function user()
+    public function users()
     {
         return $this->belongsTo(User::class);
     }

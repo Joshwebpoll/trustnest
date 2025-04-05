@@ -6,6 +6,7 @@ use App\Models\Saving;
 use App\Models\WalletUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
@@ -17,7 +18,7 @@ class WalletController extends Controller
             $wallet = WalletUser::where('user_id', $userId)->first();
             return response()->json([
                 'status' => true,
-                'Wallet' =>  $wallet
+                'Wallet' =>  Crypt::decryptString($wallet->wallet_balance)
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -18,7 +19,9 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'surname',
         'name',
+        'lastname',
         'email',
         "username",
         'password',
@@ -32,7 +35,8 @@ class User extends Authenticatable
         "country",
         "role",
         "is_verified",
-        "status"
+        "status",
+        'date_of_birth'
     ];
 
     /**
@@ -56,5 +60,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function bankAccount()
+    {
+        return $this->hasOne(AccountDetail::class);
     }
 }

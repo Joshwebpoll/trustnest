@@ -176,6 +176,9 @@ class UserController extends Controller
             if ($user->is_verified !== 0) {
                 return response()->json(["status" => false, "message" => "Please verify your email to continue"], 401);
             }
+            if ($user->status !== "enable") {
+                return response()->json(["status" => false, "message" => "Your account as been disable, Please chat the support"], 401);
+            }
 
 
             //Create user unique account Number
@@ -448,5 +451,9 @@ class UserController extends Controller
                 'message' => $e->getMessage()
             ], 400);
         }
+    }
+    public function getUserAccount(Request $request)
+    {
+        $users = Auth::user()->id;
     }
 }

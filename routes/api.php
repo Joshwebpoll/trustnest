@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\SavingController as AdminSavingController;
+use App\Http\Controllers\Admin\UserSettingsController;
 use App\Http\Controllers\ReservedAccountController;
 use App\Http\Controllers\SavingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\WebHook\webHookController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -20,11 +23,19 @@ Route::post('/forgot_password', [UserController::class, 'forgotPassword']);
 Route::post('/reset_password', [UserController::class, 'ResetPassword']);
 Route::post('/password_reset', [UserController::class, 'PasswordReset']);
 
-Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
+Route::group(["middleware" => ['auth:sanctum']], function () {
     Route::get('/profile', [UserController::class, 'profileDetails']);
     Route::post('/update_profile', [UserController::class, 'UpdateprofileDetails']);
     Route::get('/bank_details', [ReservedAccountController::class, 'getUniqueBankAccount']);
     Route::get('/savings', [SavingController::class, 'getSaving']);
     Route::get('/get_wallet', [WalletController::class, 'getUserWallet']);
+    Route::get('/bank_account', [UserController::class, 'getUserAccount']);
     Route::post('/logout', [UserController::class, 'logout']);
 });
+// Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
+//     Route::get('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
+// });
+Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
+Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
+Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);
+Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
