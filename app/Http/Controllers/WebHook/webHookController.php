@@ -64,18 +64,7 @@ class webHookController extends Controller
                     $saving_id = 'SVD-' . strtoupper(uniqid() . mt_rand(1000, 9999));
                     $transaction_id = Str::uuid();
                     if ($result) {
-                        // $saving_result = Saving::create([
-                        //     "transaction_id" => $saving_id,
-                        //     'account_number' => $result->destination_account_number,
-                        //     'amount_deposited' => Crypt::encryptString($eventData['amountPaid']),
-                        //     'saving_type' => "saving",
-                        //     'status' => 'completed',
-                        //     'transaction_reference' => $transaction_id,
-                        //     'deposit_type' => "transfer",
-                        //     'processed_by' => "1",
-                        //     'deposit_date' => now(),
 
-                        // ]);
 
                         $getBanks = AccountDetail::where("account_number", $result->destination_account_number)->first();
 
@@ -86,6 +75,21 @@ class webHookController extends Controller
                         $getWalletBalance->update([
                             "wallet_balance" => Crypt::encryptString($totalBalance)
                         ]);
+                        $checkDub = Saving::where("transaction_reference", $eventData['transactionReference'])->first();
+                        if (!$checkDub) {
+                            Saving::create([
+                                "transaction_id" => $saving_id,
+                                'account_number' => $result->destination_account_number,
+                                'amount_deposited' => Crypt::encryptString($results["responseBody"]["settlementAmount"]),
+                                'saving_type' => "saving",
+                                'status' => 'completed',
+                                'transaction_reference' => $eventData['transactionReference'],
+                                'deposit_type' => "transfer",
+                                'processed_by' => "1",
+                                'deposit_date' => now(),
+
+                            ]);
+                        }
                     }
                     return response()->json([
                         "status" => true,

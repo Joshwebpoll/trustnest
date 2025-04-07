@@ -18,4 +18,12 @@ class Saving extends Model
         "deposit_date"
 
     ];
+    protected $casts = [
+        'deposit_date' => 'date',
+
+    ];
+    public function bankAccount()
+    {
+        return $this->belongsTo(AccountDetail::class);
+    }
 }

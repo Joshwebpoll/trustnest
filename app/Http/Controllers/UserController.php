@@ -11,6 +11,7 @@ use App\Helper\BankAccount;
 use Illuminate\Http\Request;
 use App\Models\AccountDetail;
 use App\Mail\registrationEmail;
+use App\Models\CpMembers;
 use App\Models\UniqueBankAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -50,7 +51,20 @@ class UserController extends Controller
                 "otp_expires_at" => $otpExpiresAt,
                 "phone_number" => $request->phone_number
             ]);
-
+            $membershipNumber = 'MEM' . str_pad(CpMembers::count() + 1, 4, '0', STR_PAD_LEFT);
+            $id_number = 'MEM-' . strtoupper(uniqid() . mt_rand(1000, 9999));
+            CpMembers::create([
+                'user_id' => $user->id,
+                'membership_number' => $membershipNumber,
+                'full_name' => $user->name,
+                'id_number' => $id_number,
+                'phone' => $user->phone_number,
+                'email' => $user->email,
+                'joining_date' => now(),
+                'total_shares' => Crypt::encryptString(0),
+                'total_savings' => Crypt::encryptString(0),
+                'status' => 'active',
+            ]);
 
             Mail::to($request->email)->send(new registrationEmail($user));
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -228,6 +242,7 @@ class UserController extends Controller
                     ]);
                 }
             }
+
             $walletId = 'WLB-' . strtoupper(uniqid() . mt_rand(1000, 9999));
             // $wallet = WalletUser::firstOrCreate(
             //     ['wallet_id' => $walletId],
@@ -246,7 +261,8 @@ class UserController extends Controller
                     'user_id' => $user->id
                 ]);
             };
-
+            // Clear old tokens when logging in
+            $user->tokens()->delete();
 
             $token = $user->createToken('auth_token', ['*'], now()->addHour(1))->plainTextToken;
 

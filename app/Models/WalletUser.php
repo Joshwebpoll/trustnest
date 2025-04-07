@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Crypt;
 
 class WalletUser extends Model
 {
-    protected $fillable = ["wallet_id", "wallet_balance", "balanace_before", "balanace_after", "user_id"];
-    public function users()
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $fillable = ["wallet_id", "wallet_balance", "balanace_before", "balanace_after", "user_id", "status"];
+    // public function users()
+    // {
+    //     return $this->belongsTo(User::class);
+    // }
     // public function setBalanceAttribute($value)
     // {
     //     $this->attributes['wallet_balance'] = Crypt::encrypt($value);
