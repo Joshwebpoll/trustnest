@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CpContribution;
+use App\Models\CpMember;
+use App\Models\CpMembers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
@@ -25,9 +27,12 @@ class ContributionController extends Controller
                 'contribution_deposit_type' => 'required|string|in:cash,transfer',
 
             ]);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
             $transaction_id = 'CONT-' . strtoupper(uniqid() . mt_rand(1000, 9999));
             $reference = 'CONT' . time() . rand(100, 999);
-            CpContribution::create([
+            $contribution = CpContribution::create([
                 "member_id" => $request->member_id,
                 "transaction_id" => $transaction_id,
                 "contribution_type" => $request->contribution_type,
@@ -39,10 +44,47 @@ class ContributionController extends Controller
                 "status" => $request->status,
                 "contribution_deposit_type" => $request->contribution_deposit_type
             ]);
+            $contributionDetails = CpContribution::where("transaction_id", $transaction_id)->first();
+            //Update member totals
+            $member = CpMember::where("id", $contribution->member_id)->first();
+            $decryptContribution = Crypt::decryptString($contributionDetails->amount_contributed);
+            $decryptShares = Crypt::decryptString($member->total_shares);
+            $decryptSavings = Crypt::decryptString($member->total_savings);
+            if ($contribution->contribution_type == 'savings') {
+                $addBalanceSavings = bcadd($decryptSavings, $decryptContribution, 2);
 
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 422);
+                $member->update([
+                    "total_savings" => Crypt::encryptString($addBalanceSavings)
+                ]);
             }
+            if ($contribution->contribution_type == 'shares') {
+                $addBalanceShares = bcadd($decryptShares, $decryptContribution, 2);
+
+                $member->update([
+                    "total_shares" => Crypt::encryptString($addBalanceShares)
+                ]);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'created successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
+
+    public function getContribution()
+    {
+        try {
+            $getContribution = CpContribution::all();
+            return response()->json([
+                "status" => true,
+                "contribution" => $getContribution
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,

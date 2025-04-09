@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 class CpLoan extends Model
 {
@@ -15,6 +16,7 @@ class CpLoan extends Model
         'monthly_repayment',
         'total_payable',
         "remaining_balance",
+        "total_paid",
         "guarantor_user_id",
         "guarantor_name",
         "guarantor_email",

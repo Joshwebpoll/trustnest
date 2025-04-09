@@ -11,6 +11,7 @@ use App\Helper\BankAccount;
 use Illuminate\Http\Request;
 use App\Models\AccountDetail;
 use App\Mail\registrationEmail;
+use App\Models\CpMember;
 use App\Models\CpMembers;
 use App\Models\UniqueBankAccount;
 use Illuminate\Support\Facades\Auth;
@@ -51,9 +52,9 @@ class UserController extends Controller
                 "otp_expires_at" => $otpExpiresAt,
                 "phone_number" => $request->phone_number
             ]);
-            $membershipNumber = 'MEM' . str_pad(CpMembers::count() + 1, 4, '0', STR_PAD_LEFT);
+            $membershipNumber = 'MEM' . str_pad(CpMember::count() + 1, 4, '0', STR_PAD_LEFT);
             $id_number = 'MEM-' . strtoupper(uniqid() . mt_rand(1000, 9999));
-            CpMembers::create([
+            CpMember::create([
                 'user_id' => $user->id,
                 'membership_number' => $membershipNumber,
                 'full_name' => $user->name,
@@ -264,7 +265,8 @@ class UserController extends Controller
             // Clear old tokens when logging in
             $user->tokens()->delete();
 
-            $token = $user->createToken('auth_token', ['*'], now()->addHour(1))->plainTextToken;
+            // $token = $user->createToken('auth_token', ['*'], now()->addHour(1))->plainTextToken;
+            $token = $user->createToken('auth_token')->plainTextToken;
 
 
             return response()->json([

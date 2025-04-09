@@ -3,9 +3,14 @@
 use App\Http\Controllers\Admin\ContributionController;
 use App\Http\Controllers\Admin\SavingController as AdminSavingController;
 use App\Http\Controllers\Admin\InterestController as AdminInterestController;
+use App\Http\Controllers\Admin\LoanControllerAdmin;
+use App\Http\Controllers\Admin\MembersController;
+use App\Http\Controllers\Admin\RepaymentController;
 use App\Http\Controllers\Admin\UserSettingsController;
 use App\Http\Controllers\InterestController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\MemberContribution;
+use App\Http\Controllers\MembersUserController;
 use App\Http\Controllers\ReservedAccountController;
 use App\Http\Controllers\SavingController;
 use Illuminate\Http\Request;
@@ -38,6 +43,8 @@ Route::group(["middleware" => ['auth:sanctum']], function () {
     Route::get('/bank_account', [UserController::class, 'getUserAccount']);
     Route::post('/logout', [UserController::class, 'logout']);
     Route::post('/request_loan', [LoanController::class, 'requestLoan']);
+    Route::get('/get_members', [MembersUserController::class, 'getMemberDetails']);
+    Route::get('/get_contribution', [MemberContribution::class, 'getContributions']);
 });
 // Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
 //     Route::get('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
@@ -46,6 +53,11 @@ Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
 Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
 Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);
 Route::post('/admin/contribution', [ContributionController::class, 'saveContribution']);
+Route::get('/admin/contribution', [ContributionController::class, 'getContribution']);
+Route::get('/admin/get_members', [MembersController::class, 'getMemberDetails']);
+Route::get('/admin/get_loan', [LoanControllerAdmin::class, 'getAllLoan']);
+Route::get('/admin/loan_repayment', [RepaymentController::class, 'repayLoan']);
+Route::post('/admin/loan_repayment', [RepaymentController::class, 'createLoanRepayment']);
 Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
 Route::get('admin/get_interest', [AdminInterestController::class, 'getInterest']);
 Route::post('admin/add_interest', [AdminInterestController::class, 'createInterest']);

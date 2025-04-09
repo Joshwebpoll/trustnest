@@ -15,9 +15,18 @@ return new class extends Migration
             $table->id();
             $table->string('loan_id');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('amount', 12, 2);
+            $table->text('repayment_amount');
+            $table->text('remaining_balance');
+            $table->string('payment_method');
+            $table->string('interest_component')->nullable();
+            $table->string('transaction_reference');
+            $table->date('due_date');
             $table->date('repayment_date');
-            $table->enum('status', ['paid', 'late', 'missed'])->default('paid');
+            $table->enum('status', ['pending', 'completed', 'processing'])->default('pending');
+            $table->string('comment')->nullable();
+            $table->string('updatedById')->nullable();
+            $table->string('updatedEmail')->nullable();
+            $table->string('updatedName')->nullable();
             $table->timestamps();
         });
     }

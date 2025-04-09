@@ -18,9 +18,10 @@ return new class extends Migration
             $table->text('amount');
             $table->decimal('interest_rate', 5, 2);
             $table->integer('duration_months')->default(12);
-            $table->decimal('monthly_repayment', 12, 2)->nullable();
-            $table->decimal('total_payable', 12, 2)->nullable();
-            $table->decimal('remaining_balance', 12, 2)->nullable();
+            $table->text('monthly_repayment')->nullable();
+            $table->text('total_payable')->nullable();
+            $table->text('remaining_balance')->nullable();
+            $table->text('total_paid')->nullable();
             $table->string('guarantor_user_id')->nullable();
             $table->string('guarantor_name')->nullable();
             $table->string('guarantor_email')->nullable();

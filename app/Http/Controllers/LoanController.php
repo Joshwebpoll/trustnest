@@ -6,6 +6,7 @@ use App\Mail\LoanEmailToAdmin;
 use App\Mail\LoanEmailToUser;
 use App\Models\CpInterestRate;
 use App\Models\CpLoan;
+use App\Models\CpMember;
 use App\Models\User;
 use App\Models\WalletUser;
 use Carbon\Carbon;
@@ -36,7 +37,7 @@ class LoanController extends Controller
                 return response()->json($validator->errors(), 422);
             }
             //Check weather the user as an existing loan
-            $checkLoanTable = CpLoan::where("user_id", $user_id)->whereIn('status', ['pending', 'approved'])
+            $checkLoanTable = CpLoan::where("user_id", $user_id)->whereIn('status', ['pending', 'approved', "disbursed", 'rejected', 'defaulted'])
                 ->first();;
 
             if ($checkLoanTable) {
@@ -45,9 +46,15 @@ class LoanController extends Controller
                 ], 403);
             }
 
+            //Get User Wallet Balance, May Use this Later
+            // $getUserAmount = WalletUser::where('user_id', $user_id)->where('status', 'enable')->first();
+            // $totalContributions = Crypt::decryptString($getUserAmount->wallet_balance);
 
-            $getUserAmount = WalletUser::where('user_id', $user_id)->where('status', 'enable')->first();
-            $totalContributions = Crypt::decryptString($getUserAmount->wallet_balance);
+            //Get Members Shares and Savings
+            $getMembers = CpMember::where('user_id', $user_id)->where('status', 'active')->first();
+            $sumSavings = Crypt::decryptString($getMembers->total_shares);
+            $sumShares = Crypt::decryptString($getMembers->total_savings);
+            $totalContributions = bcadd($sumSavings, $sumShares, 2);
 
             // Check if loan amount is within double the contribution
             if ($request->amount > ($totalContributions * 2)) {
@@ -82,11 +89,13 @@ class LoanController extends Controller
             $loan = CpLoan::create([
                 "user_id" => $user_id,
                 'loan_number' => 'LOAN' . time() . rand(100, 999),
-                "amount" => $requestedAmount,
+                "amount" => Crypt::encryptString($requestedAmount),
                 "interest_rate" => $interestRate->interest_rate,
                 "duration_months" => $durationMonths,
-                'monthly_repayment' => $monthlyRepayment,
-                "total_payable" => $totalPayable,
+                'monthly_repayment' => Crypt::encryptString($monthlyRepayment),
+                "total_payable" => Crypt::encryptString($totalPayable),
+                "remaining_balance" => Crypt::encryptString($totalPayable),
+                "total_paid" => Crypt::encryptString(0),
                 "start_date" => $startDate,
                 "end_date" => $endDate,
                 'application_date' => now(),
@@ -102,6 +111,7 @@ class LoanController extends Controller
             return response()->json([
                 "status" => true,
                 'message' => "Your loan application was successful.",
+
 
 
             ], 201);

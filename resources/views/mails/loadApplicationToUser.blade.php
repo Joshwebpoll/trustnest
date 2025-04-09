@@ -1,3 +1,7 @@
+@php
+    use Illuminate\Support\Facades\Crypt;
+@endphp
+
 <!DOCTYPE html>
 <html>
 
@@ -40,7 +44,8 @@
 
                                 <tr>
                                     <td style="padding: 12px 20px;">Amount Requested:</td>
-                                    <td style="padding: 12px 20px;">₦{{ number_format($loan->amount, 2) }}</td>
+                                    <td style="padding: 12px 20px;">
+                                        ₦{{ number_format(Crypt::decryptString($loan->amount)) }}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 12px 20px;">Duration:</td>
@@ -48,7 +53,9 @@
                                 </tr>
                                 <tr>
                                     <td style="padding: 12px 20px;">Total Repayment:</td>
-                                    <td style="padding: 12px 20px;">₦{{ number_format($loan->total_payable) }} </td>
+                                    <td style="padding: 12px 20px;">
+                                        ₦{{ number_format(Crypt::decryptString($loan->total_payable)) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 12px 20px;">Start Date:</td>
