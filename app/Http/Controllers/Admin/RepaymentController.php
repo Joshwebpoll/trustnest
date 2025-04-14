@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\RepaymentResource;
 use App\Models\AccountDetail;
 use App\Models\CpContribution;
 use App\Models\CpLoan;
@@ -22,7 +23,7 @@ class RepaymentController extends Controller
             $getAllRepayment = CpRepayment::all();
             return response()->json([
                 'status' => true,
-                "repayment" => $getAllRepayment
+                "repayment" => RepaymentResource::collection($getAllRepayment)
 
             ], 200);
         } catch (\Exception $e) {

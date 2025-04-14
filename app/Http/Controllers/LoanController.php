@@ -22,7 +22,7 @@ class LoanController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'amount' => 'required|numeric|min:1000',
+                'amount' => 'required|numeric',
                 'purpose' => 'required|string'
                 // 'interest_rate' => 'required|numeric',
                 // 'duration_months' => 'required|integer|min:1',
@@ -40,11 +40,11 @@ class LoanController extends Controller
             $checkLoanTable = CpLoan::where("user_id", $user_id)->whereIn('status', ['pending', 'approved', "disbursed", 'rejected', 'defaulted'])
                 ->first();;
 
-            if ($checkLoanTable) {
-                return response()->json([
-                    'message' => 'You already have an existing loan application or active loan.'
-                ], 403);
-            }
+            // if ($checkLoanTable) {
+            //     return response()->json([
+            //         'message' => 'You already have an existing loan application or active loan.'
+            //     ], 403);
+            // }
 
             //Get User Wallet Balance, May Use this Later
             // $getUserAmount = WalletUser::where('user_id', $user_id)->where('status', 'enable')->first();
@@ -57,12 +57,12 @@ class LoanController extends Controller
             $totalContributions = bcadd($sumSavings, $sumShares, 2);
 
             // Check if loan amount is within double the contribution
-            if ($request->amount > ($totalContributions * 2)) {
-                return response()->json([
-                    "status" => false,
-                    'message' => 'You can only borrow up to double your contributions.'
-                ], 400);
-            }
+            // if ($request->amount > ($totalContributions * 2)) {
+            //     return response()->json([
+            //         "status" => false,
+            //         'message' => 'You can only borrow up to double your contributions.'
+            //     ], 400);
+            // }
 
             $user = User::find($user_id);
 

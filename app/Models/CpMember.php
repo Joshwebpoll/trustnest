@@ -21,30 +21,30 @@ class CpMember extends Model
     ];
 
     // Append the decrypted fields to the model output
-    protected $appends = ['decrypted_total_shares', 'decrypted_total_savings'];
+    // protected $appends = ['decrypted_total_shares', 'decrypted_total_savings'];
 
-    // Optionally hide the encrypted fields in JSON response
-    protected $hidden = ['total_shares', 'total_savings'];
+    // // Optionally hide the encrypted fields in JSON response
+    // protected $hidden = ['total_shares', 'total_savings'];
 
-    // Accessor for decrypted total_shares
-    public function getDecryptedTotalSharesAttribute()
-    {
-        try {
-            return Crypt::decryptString($this->attributes['total_shares']);
-        } catch (\Exception $e) {
-            return 'Decryption Error'; // Handle decryption error
-        }
-    }
+    // // Accessor for decrypted total_shares
+    // public function getDecryptedTotalSharesAttribute()
+    // {
+    //     try {
+    //         return Crypt::decryptString($this->attributes['total_shares']);
+    //     } catch (\Exception $e) {
+    //         return 'Decryption Error'; // Handle decryption error
+    //     }
+    // }
 
     // Accessor for decrypted total_savings
-    public function getDecryptedTotalSavingsAttribute()
-    {
-        try {
-            return Crypt::decryptString($this->attributes['total_savings']);
-        } catch (\Exception $e) {
-            return 'Decryption Error'; // Handle decryption error
-        }
-    }
+    // public function getDecryptedTotalSavingsAttribute()
+    // {
+    //     try {
+    //         return Crypt::decryptString($this->attributes['total_savings']);
+    //     } catch (\Exception $e) {
+    //         return 'Decryption Error'; // Handle decryption error
+    //     }
+    // }
 
     // Relationship (if needed)
     // public function contributions()

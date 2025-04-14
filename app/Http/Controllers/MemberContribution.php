@@ -12,8 +12,8 @@ class MemberContribution extends Controller
     public function getContributions()
     {
         try {
-            $userId = Auth::user()->id;
-            $trackUser = AccountDetail::where("user_id", $userId)->first();
+            $user = Auth::user();
+            $trackUser = AccountDetail::where("user_id", $user->id)->first();
             $contribution = CpContribution::where('account_number', $trackUser->account_number)->get();
             return response()->json([
                 "status" => true,

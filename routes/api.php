@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminCreateUsers;
 use App\Http\Controllers\Admin\ContributionController;
 use App\Http\Controllers\Admin\SavingController as AdminSavingController;
 use App\Http\Controllers\Admin\InterestController as AdminInterestController;
@@ -32,7 +33,7 @@ Route::post('/forgot_password', [UserController::class, 'forgotPassword']);
 Route::post('/reset_password', [UserController::class, 'ResetPassword']);
 Route::post('/password_reset', [UserController::class, 'PasswordReset']);
 
-Route::group(["middleware" => ['auth:sanctum']], function () {
+Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
     Route::get('/profile', [UserController::class, 'profileDetails']);
     Route::post('/update_profile', [UserController::class, 'UpdateprofileDetails']);
     Route::get('/bank_details', [ReservedAccountController::class, 'getUniqueBankAccount']);
@@ -46,20 +47,39 @@ Route::group(["middleware" => ['auth:sanctum']], function () {
     Route::get('/get_members', [MembersUserController::class, 'getMemberDetails']);
     Route::get('/get_contribution', [MemberContribution::class, 'getContributions']);
 });
-// Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
-//     Route::get('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
-// });
-Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
-Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
-Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);
-Route::post('/admin/contribution', [ContributionController::class, 'saveContribution']);
-Route::get('/admin/contribution', [ContributionController::class, 'getContribution']);
-Route::get('/admin/get_members', [MembersController::class, 'getMemberDetails']);
-Route::get('/admin/get_loan', [LoanControllerAdmin::class, 'getAllLoan']);
-Route::get('/admin/loan_repayment', [RepaymentController::class, 'repayLoan']);
-Route::post('/admin/loan_repayment', [RepaymentController::class, 'createLoanRepayment']);
-Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
-Route::get('admin/get_interest', [AdminInterestController::class, 'getInterest']);
-Route::post('admin/add_interest', [AdminInterestController::class, 'createInterest']);
-Route::put('admin/update_interest/{id}', [AdminInterestController::class, 'updateInterest']);
-Route::delete('admin/delete_interest/{id}', [AdminInterestController::class, 'deleteInterest']);
+Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
+    Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
+    Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
+    Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);
+    Route::post('/admin/contribution', [ContributionController::class, 'saveContribution']);
+    Route::get('/admin/contribution', [ContributionController::class, 'getContribution']);
+    Route::get('/admin/get_members', [MembersController::class, 'getMemberDetails']);
+    Route::get('/admin/get_loan', [LoanControllerAdmin::class, 'getAllLoan']);
+    Route::get('/admin/loan_repayment', [RepaymentController::class, 'repayLoan']);
+    Route::post('/admin/loan_repayment', [RepaymentController::class, 'createLoanRepayment']);
+    Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
+    Route::get('admin/get_interest', [AdminInterestController::class, 'getInterest']);
+    Route::post('admin/add_interest', [AdminInterestController::class, 'createInterest']);
+
+    Route::put('admin/update_interest/{id}', [AdminInterestController::class, 'updateInterest']);
+    Route::delete('admin/delete_interest/{id}', [AdminInterestController::class, 'deleteInterest']);
+    Route::post('admin/create_user', [AdminCreateUsers::class, 'createUsers']);
+    Route::put('admin/approve_loan/{id}', [LoanControllerAdmin::class, 'approveLoan']);
+});
+
+
+// Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
+// Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
+// Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);
+// Route::post('/admin/contribution', [ContributionController::class, 'saveContribution']);
+// Route::get('/admin/contribution', [ContributionController::class, 'getContribution']);
+// Route::get('/admin/get_members', [MembersController::class, 'getMemberDetails']);
+// Route::get('/admin/get_loan', [LoanControllerAdmin::class, 'getAllLoan']);
+// Route::get('/admin/loan_repayment', [RepaymentController::class, 'repayLoan']);
+// Route::post('/admin/loan_repayment', [RepaymentController::class, 'createLoanRepayment']);
+// Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
+// Route::get('admin/get_interest', [AdminInterestController::class, 'getInterest']);
+// Route::post('admin/add_interest', [AdminInterestController::class, 'createInterest']);
+// Route::post('admin/create_user', [AdminCreateUsers::class, 'createUsers']);
+// Route::put('admin/update_interest/{id}', [AdminInterestController::class, 'updateInterest']);
+// Route::delete('admin/delete_interest/{id}', [AdminInterestController::class, 'deleteInterest']);

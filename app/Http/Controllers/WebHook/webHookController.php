@@ -100,24 +100,24 @@ class webHookController extends Controller
                                     "status" => "completed"
                                 ]);
                             } elseif ($checkLoanPaidFully === -1) {
-                                CpRepayment::create([
-                                    "loan_id" => $checkMaybeUserAsPendingLoan->id,
-                                    "user_id" => $checkMaybeUserAsPendingLoan->user_id,
-                                    "repayment_amount" => $results["responseBody"]["settlementAmount"],
-                                    "remaining_balance" => $remainingBalanceToBePaid,
-                                    "payment_method" => 'transfer',
-                                    "due_date" => Carbon::now()->addMonth(),
-                                    "transaction_reference" => $transaction_id,
-                                    "repayment_date" => now(),
-                                    "status" => 'completed'
+                                // CpRepayment::create([
+                                //     "loan_id" => $checkMaybeUserAsPendingLoan->id,
+                                //     "user_id" => $checkMaybeUserAsPendingLoan->user_id,
+                                //     "repayment_amount" => $results["responseBody"]["settlementAmount"],
+                                //     "remaining_balance" => $remainingBalanceToBePaid,
+                                //     "payment_method" => 'transfer',
+                                //     "due_date" => Carbon::now()->addMonth(),
+                                //     "transaction_reference" => $transaction_id,
+                                //     "repayment_date" => now(),
+                                //     "status" => 'completed'
 
 
-                                ]);
+                                // ]);
 
-                                $checkMaybeUserAsPendingLoan->update([
-                                    "remaining_balance" => Crypt::encryptString($remainingBalanceToBePaid),
-                                    "total_paid" => Crypt::encryptString($calculate_total_paid)
-                                ]);
+                                // $checkMaybeUserAsPendingLoan->update([
+                                //     "remaining_balance" => Crypt::encryptString($remainingBalanceToBePaid),
+                                //     "total_paid" => Crypt::encryptString($calculate_total_paid)
+                                // ]);
                             } else {
                                 $transaction_id = 'CONT-' . strtoupper(uniqid() . mt_rand(1000, 9999));
 

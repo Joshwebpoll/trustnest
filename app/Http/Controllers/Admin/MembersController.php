@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MemberResource;
 use App\Models\CpMember;
 use App\Models\CpMembers;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class MembersController extends Controller
 
             return response()->json([
                 'status' => true,
-                "message" => $members,
+                "message" => MemberResource::collection($members),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

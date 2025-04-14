@@ -23,7 +23,9 @@ return new class extends Migration
             $table->date('contribution_date');
             $table->enum('status', ['pending', 'completed'])->default('pending');
             $table->enum('contribution_deposit_type', ['cash', 'transfer']);
-            $table->string('processed_by')->nullable();
+            $table->string('processed_by_id')->nullable();
+            $table->string('processed_by_name')->nullable();
+            $table->string('processed_by_email')->nullable();
             $table->timestamps();
         });
     }

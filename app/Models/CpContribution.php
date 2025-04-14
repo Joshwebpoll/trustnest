@@ -18,7 +18,9 @@ class CpContribution extends Model
         'contribution_date',
         'status',
         'contribution_deposit_type',
-        'processed_by'
+        'processed_by_id',
+        'processed_by_name',
+        'processed_by_email'
 
     ];
     // 👇 this will expose the decrypted value
