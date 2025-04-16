@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ContributionResource;
 use App\Models\CpContribution;
 use App\Models\CpLoan;
 use App\Models\CpMember;
@@ -94,13 +95,15 @@ class ContributionController extends Controller
         }
     }
 
-    public function getContribution()
+    public function getContribution(Request $request)
     {
         try {
-            $getContribution = CpContribution::all();
+            $perPage = $request->get('per_page', 2);
+            $getContribution = CpContribution::paginate($perPage);
             return response()->json([
                 "status" => true,
-                "contribution" => $getContribution
+                "contributions" => ContributionResource::collection($getContribution)->response()->getData(true),
+
             ]);
         } catch (\Exception $e) {
             return response()->json([

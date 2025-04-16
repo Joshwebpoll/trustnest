@@ -18,7 +18,7 @@ class MembersController extends Controller
 
             return response()->json([
                 'status' => true,
-                "message" => MemberResource::collection($members),
+                "members" => MemberResource::collection($members),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
