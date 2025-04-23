@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Mail\registrationEmail;
 use App\Models\User;
 use Carbon\Carbon;
@@ -60,6 +61,38 @@ class UserSettingsController extends Controller
             }
             $user->delete($id);
             return response()->json(['status' => true, 'message' => 'User deleted successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
+
+    public function getAllUsers(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $search = $request->input('search');
+            $query = User::query();
+            if ($search) {
+                $query->where(
+                    function ($q) use ($search) {
+                        $q->where('email', 'like', "%$search%")
+                            ->orWhere('name', 'like', "%$search%");
+                    }
+                );
+            }
+
+            if ($status = $request->input('status')) {
+                $query->where('status', $status); // assuming "active", "inactive", etc.
+            }
+            $getUsers = $query->paginate($perPage);
+            return response()->json([
+                "status" => true,
+                "users" => UserResource::collection($getUsers)->response()->getData(true),
+
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,

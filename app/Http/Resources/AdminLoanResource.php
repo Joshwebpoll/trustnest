@@ -16,10 +16,15 @@ class AdminLoanResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-
-            "total_payable" => Crypt::decryptString($this->total_payable),
-            "remaining_balance" => Crypt::decryptString($this->remaining_balance),
-            "total_paid" => Crypt::decryptString($this->total_paid),
+            "id" => $this->id,
+            "loan_number" => $this->loan_number,
+            "interest_rate" => $this->interest_rate,
+            "duration_months" => $this->duration_months,
+            "status" => $this->status,
+            "monthly_repayment" => Crypt::decryptString($this->monthly_repayment, 2),
+            "total_payable" => Crypt::decryptString($this->total_payable, 2),
+            "remaining_balance" => Crypt::decryptString($this->remaining_balance, 2),
+            "total_paid" => Crypt::decryptString($this->total_paid, 2),
         ];
     }
 }

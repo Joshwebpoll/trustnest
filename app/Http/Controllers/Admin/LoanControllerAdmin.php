@@ -17,13 +17,29 @@ use Illuminate\Support\Facades\Validator;
 
 class LoanControllerAdmin extends Controller
 {
-    public function getAllLoan()
+    public function getAllLoan(Request $request)
     {
         try {
-            $getAllLoan = CpLoan::all();
+            $perPage = $request->get('per_page', 10);
+            $search = $request->input('search');
+            $query = CpLoan::query();
+            if ($search) {
+                $query->where(
+                    function ($q) use ($search) {
+                        $q->where('loan_number', 'like', "%$search%")
+                            ->orWhere('status', 'like', "%$search%");
+                    }
+                );
+            }
+
+            if ($status = $request->input('status')) {
+                $query->where('status', $status); // assuming "active", "inactive", etc.
+            }
+            $getLoan = $query->paginate($perPage);
             return response()->json([
-                'status' => true,
-                'loan' =>  AdminLoanResource::collection($getAllLoan),
+                "status" => true,
+                "loans" => AdminLoanResource::collection($getLoan)->response()->getData(true),
+
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

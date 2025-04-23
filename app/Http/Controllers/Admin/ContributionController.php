@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ContributionExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ContributionResource;
 use App\Models\CpContribution;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ContributionController extends Controller
 {
@@ -98,18 +100,39 @@ class ContributionController extends Controller
     public function getContribution(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 2);
-            $getContribution = CpContribution::paginate($perPage);
+            $perPage = $request->get('per_page', 10);
+            $search = $request->input('search');
+            $query = CpContribution::query();
+            if ($search) {
+                $query->where(
+                    function ($q) use ($search) {
+                        $q->where('transaction_id', 'like', "%$search%")
+                            ->orWhere('account_number', 'like', "%$search%");
+                    }
+                );
+            }
+
+            if ($status = $request->input('status')) {
+                $query->where('status', $status); // assuming "active", "inactive", etc.
+            }
+            $getContribution = $query->paginate($perPage);
             return response()->json([
                 "status" => true,
                 "contributions" => ContributionResource::collection($getContribution)->response()->getData(true),
 
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
             ], 401);
         }
+    }
+
+    //excel contribution export
+
+    public function exportContribution()
+    {
+        return Excel::download(new ContributionExport, 'cp_contributions.xlsx');
     }
 }

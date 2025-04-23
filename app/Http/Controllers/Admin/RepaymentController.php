@@ -17,15 +17,42 @@ use Illuminate\Support\Str;
 
 class RepaymentController extends Controller
 {
-    public function repayLoan()
+    public function repayLoan(Request $request)
     {
         try {
-            $getAllRepayment = CpRepayment::all();
-            return response()->json([
-                'status' => true,
-                "repayment" => RepaymentResource::collection($getAllRepayment)
+            $perPage = $request->get('per_page', 10);
+            $search = $request->input('search');
+            $from = $request->input('from');
+            $to = $request->input('to');
+            $query = CpRepayment::query();
+            if ($search) {
+                $query->where(
+                    function ($q) use ($search) {
+                        $q->where('transaction_reference', 'like', "%$search%")
+                            ->orWhere('status', 'like', "%$search%");
+                    }
+                );
+            }
+            // if ($from && $to) {
+            //     $query->whereBetween('created_at', [$from, $to]);
+            // }
+            if ($from) {
+                $query->whereDate('created_at', '>=', $request->from);
+            }
 
-            ], 200);
+            if ($to) {
+                $query->whereDate('created_at', '<=', $request->to);
+            }
+
+            if ($status = $request->input('status')) {
+                $query->where('status', $status); // assuming "active", "inactive", etc.
+            }
+            $getRepayment = $query->paginate($perPage);
+            return response()->json([
+                "status" => true,
+                "repayments" => RepaymentResource::collection($getRepayment)->response()->getData(true),
+
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
