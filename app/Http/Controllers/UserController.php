@@ -8,6 +8,7 @@ use App\Mail\ResentEmail;
 use App\Models\WalletUser;
 // use Illuminate\Foundation\Auth\User;
 use App\Helper\BankAccount;
+use App\Jobs\RegisterEmailJob;
 use Illuminate\Http\Request;
 use App\Models\AccountDetail;
 use App\Mail\registrationEmail;
@@ -31,8 +32,8 @@ class UserController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
-                'username' => 'required|string|unique:users,username|min:3|max:20|alpha_dash',
-                'password' => 'required|string|min:6|confirmed',
+                'username' => 'required|string|unique:users,username|min:3|max:20',
+                'password' => 'required|min:6|confirmed',
                 'phone_number' => 'required|unique:users',
             ]);
 
@@ -67,7 +68,8 @@ class UserController extends Controller
                 'status' => 'active',
             ]);
 
-            Mail::to($request->email)->send(new registrationEmail($user));
+            //Mail::to($request->email)->send(new registrationEmail($user));
+            RegisterEmailJob::dispatch($request->email, $user);
             $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json(["status" => true, "message" => "Registration successfull, Please verify your email to proceed"], 201);
         } catch (\Exception $e) {

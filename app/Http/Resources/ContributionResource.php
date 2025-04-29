@@ -18,6 +18,7 @@ class ContributionResource extends JsonResource
         return [
             'id' => $this->id,
             'member_id' => $this->member_id,
+            'userid_id' => $this->userid_id,
             'transaction_id' => $this->transaction_id,
             'contribution_type' => $this->contribution_type,
             'amount_contributed' => number_format(Crypt::decryptString($this->amount_contributed), 2),

@@ -9,6 +9,7 @@ class CpContribution extends Model
 {
     protected $fillable = [
         'member_id',
+        "user_id",
         'transaction_id',
         'contribution_type',
         'amount_contributed',

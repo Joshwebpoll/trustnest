@@ -182,4 +182,31 @@ class RepaymentController extends Controller
             ], 401);
         }
     }
+
+
+
+    public function  getSingleRepayment($id)
+    {
+        try {
+            $singleLoan = CpRepayment::where('id', $id)->first();
+            if (!$singleLoan) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Payment not found",
+
+                ], 404);
+            }
+
+            return response()->json([
+                "status" => true,
+                "contributions" => new RepaymentResource($singleLoan),
+
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
 }

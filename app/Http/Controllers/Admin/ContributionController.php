@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\ContributionExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ContributionResource;
+use App\Models\AccountDetail;
 use App\Models\CpContribution;
 use App\Models\CpLoan;
 use App\Models\CpMember;
@@ -22,12 +23,13 @@ class ContributionController extends Controller
         try {
             $validator = Validator::make($request->all(), [
 
-                'member_id' => 'required|exists:cp_members,id',
-                'account_number' => 'required|string|max:20|exists:account_details,account_number',
+                // 'member_id' => 'required|exists:cp_members,id',
+                'user_id' => 'required|exists:users,id',
+                'account_number' => 'required|max:20|exists:account_details,account_number',
                 'contribution_type' => 'required|in:savings,shares,fee',
                 'amount_contributed' => 'required|numeric|min:0',
                 'payment_method' => 'required|string',
-                'contribution_date' => 'required|date',
+                // 'contribution_date' => 'required|date',
                 'status' => 'required|in:pending,completed',
                 'contribution_deposit_type' => 'required|string|in:cash,transfer',
 
@@ -38,25 +40,39 @@ class ContributionController extends Controller
             $admin_details = Auth::user();
             $transaction_id = 'CONT-' . strtoupper(uniqid() . mt_rand(1000, 9999));
             $reference = 'CONT' . time() . rand(100, 999);
-            $cMember = CpMember::where('id', $request->member_id)->where('status', 'active')->first();
-            $checkUserExistingLoan = CpLoan::where('user_id', $cMember->user_id)->first();
-            if ($checkUserExistingLoan->status == 'disbursed' || $checkUserExistingLoan->status == 'defaulted' || $checkUserExistingLoan->status == 'approved') {
+            $cMember = CpMember::where('user_id', $request->user_id)->where('status', 'active')->first();
+            $checkUserExistingLoan = CpLoan::where('user_id', $request->user_id)->first();
+
+            $checkUserHasLoan = CpLoan::where('user_id', $request->user_id)->count();
+            $compareAcctNumber = AccountDetail::where('user_id', $request->user_id)->first();
+
+            if ($compareAcctNumber->account_number != $request->account_number) {
                 return response()->json([
-                    'status' => true,
-                    'message' => "The user have an unpaid loan"
-                ], 200);
+                    'status' => false,
+                    'message' => "Invalid account number"
+                ], 400);
+            }
+            if ($checkUserHasLoan > 0) {
+                if ($checkUserExistingLoan->status !== 'disbursed' || $checkUserExistingLoan->status == 'defaulted' || $checkUserExistingLoan->status !== 'approved') {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "The user have an unpaid loan"
+                    ], 400);
+                }
             }
 
-            if ($request->status == "completed") {
+
+            if ($request->status == "completed" || $request->status == "pending") {
                 $contribution = CpContribution::create([
-                    "member_id" => $request->member_id,
+                    "member_id" => $cMember->id,
+                    "user_id" => $request->user_id,
                     "transaction_id" => $transaction_id,
                     "contribution_type" => $request->contribution_type,
                     "amount_contributed" => Crypt::encryptString($request->amount_contributed),
                     "payment_method" => $request->payment_method,
                     "reference_number" => $reference,
                     'account_number' => $request->account_number,
-                    "contribution_date" => $request->contribution_date,
+                    "contribution_date" => now(), //$request->contribution_date,
                     "status" => $request->status,
                     "contribution_deposit_type" => $request->contribution_deposit_type,
                     "processed_by_id" => $admin_details->id,
@@ -134,5 +150,30 @@ class ContributionController extends Controller
     public function exportContribution()
     {
         return Excel::download(new ContributionExport, 'cp_contributions.xlsx');
+    }
+
+    public function getSingleContribution($id)
+    {
+        try {
+            $singleLoan = CpContribution::where('id', $id)->first();
+            if (!$singleLoan) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "contribution not found",
+
+                ], 404);
+            }
+
+            return response()->json([
+                "status" => true,
+                "contribution" => new ContributionResource($singleLoan),
+
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
     }
 }

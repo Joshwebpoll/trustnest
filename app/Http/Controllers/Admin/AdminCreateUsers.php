@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Mail\registrationEmail;
 use App\Models\CpMember;
 use App\Models\User;
@@ -76,6 +77,34 @@ class AdminCreateUsers extends Controller
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json(["status" => true, "message" => "Registration successfull, Please verify your email to proceed"], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
+
+
+
+
+    public function getSingleUser($id)
+    {
+        try {
+            $singleLoan = User::where('id', $id)->first();
+            if (!$singleLoan) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "User not found",
+
+                ], 404);
+            }
+
+            return response()->json([
+                "status" => true,
+                "users" => new UserResource($singleLoan),
+
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,

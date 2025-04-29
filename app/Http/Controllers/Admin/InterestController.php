@@ -60,8 +60,8 @@ class InterestController extends Controller
             }
 
             CpInterestRate::create([
-                // 'min_amount' => $request->min_amount,
-                // 'max_amount' => $request->max_amount,
+                'min_amount' => $request->min_amount,
+                'max_amount' => $request->max_amount,
                 'interest_rate' => $request->interest_rate,
             ]);
             return response()->json([

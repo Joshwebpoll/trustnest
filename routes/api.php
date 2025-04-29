@@ -39,25 +39,31 @@ Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
     Route::get('/bank_details', [ReservedAccountController::class, 'getUniqueBankAccount']);
     Route::get('/savings', [SavingController::class, 'getSaving']);
     Route::get('/transfer_deposit', [SavingController::class, 'getTransferDeposit']);
-
+    Route::get('/user/loan_repayment', [RepaymentController::class, 'repayLoan']);
     Route::get('/get_wallet', [WalletController::class, 'getUserWallet']);
     Route::get('/bank_account', [UserController::class, 'getUserAccount']);
     Route::post('/logout', [UserController::class, 'logout']);
     Route::post('/request_loan', [LoanController::class, 'requestLoan']);
+    Route::get('/user/get_loan', [LoanController::class, 'getUserLoan']);
     Route::get('/get_members', [MembersUserController::class, 'getMemberDetails']);
-    Route::get('/get_contribution', [MemberContribution::class, 'getContributions']);
+    Route::get('/user/get_contribution', [MemberContribution::class, 'getContributions']);
 });
 Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
     Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
     Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
+    Route::get('/admin/users_con', [UserSettingsController::class, 'getConUsers']);
     Route::get('/admin/users', [UserSettingsController::class, 'getAllUsers']);
     Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);
     Route::post('/admin/contribution', [ContributionController::class, 'saveContribution']);
     Route::get('/admin/contribution', [ContributionController::class, 'getContribution']);
+    Route::get('/admin/get_contribution/{id}', [ContributionController::class, 'getSingleContribution']);
 
     Route::get('/admin/get_members', [MembersController::class, 'getMemberDetails']);
     Route::get('/admin/get_loan', [LoanControllerAdmin::class, 'getAllLoan']);
+    Route::get('/admin/get_loan/{id}', [LoanControllerAdmin::class, 'getSingleLoan']);
+    Route::post('/admin/create_loan', [LoanControllerAdmin::class, 'createLoanUser']);
     Route::get('/admin/loan_repayment', [RepaymentController::class, 'repayLoan']);
+    Route::get('/admin/get_single/{id}', [RepaymentController::class, 'getSingleRepayment']);
     Route::post('/admin/loan_repayment', [RepaymentController::class, 'createLoanRepayment']);
     Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
     Route::get('admin/get_interest', [AdminInterestController::class, 'getInterest']);
@@ -66,6 +72,7 @@ Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
     Route::put('admin/update_interest/{id}', [AdminInterestController::class, 'updateInterest']);
     Route::delete('admin/delete_interest/{id}', [AdminInterestController::class, 'deleteInterest']);
     Route::post('admin/create_user', [AdminCreateUsers::class, 'createUsers']);
+    Route::get('admin/get_single_user/{id}', [AdminCreateUsers::class, 'getSingleUser']);
     Route::put('admin/approve_loan/{id}', [LoanControllerAdmin::class, 'approveLoan']);
 });
 

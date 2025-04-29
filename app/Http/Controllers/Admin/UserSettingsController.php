@@ -100,4 +100,23 @@ class UserSettingsController extends Controller
             ], 401);
         }
     }
+
+    public function getConUsers(Request $request)
+    {
+        try {
+
+            $query = User::whereNotIn("role", ['admin', 'editor'])->get();
+
+            return response()->json([
+                "status" => true,
+                "users" => UserResource::collection($query)->response()->getData(true),
+
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
 }

@@ -36,7 +36,11 @@ class CpLoan extends Model
     ];
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class,);
+    }
+    public function guarantor()
+    {
+        return $this->belongsTo(User::class, 'guarantor_user_id');
     }
 
     public function repayments()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserLoanResource;
 use App\Mail\LoanEmailToAdmin;
 use App\Mail\LoanEmailToUser;
 use App\Models\CpInterestRate;
@@ -37,14 +38,14 @@ class LoanController extends Controller
                 return response()->json($validator->errors(), 422);
             }
             //Check weather the user as an existing loan
-            $checkLoanTable = CpLoan::where("user_id", $user_id)->whereIn('status', ['pending', 'approved', "disbursed", 'rejected', 'defaulted'])
+            $checkLoanTable = CpLoan::where("user_id", $user_id)->whereIn('status', ['pending', 'approved', "disbursed", 'defaulted'])
                 ->first();;
 
-            // if ($checkLoanTable) {
-            //     return response()->json([
-            //         'message' => 'You already have an existing loan application or active loan.'
-            //     ], 403);
-            // }
+            if ($checkLoanTable) {
+                return response()->json([
+                    'message' => 'You already have an existing loan application or active loan.'
+                ], 403);
+            }
 
             //Get User Wallet Balance, May Use this Later
             // $getUserAmount = WalletUser::where('user_id', $user_id)->where('status', 'enable')->first();
@@ -115,6 +116,40 @@ class LoanController extends Controller
 
 
             ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
+
+    public function getUserLoan(Request $request)
+    {
+        try {
+            $userId = Auth::user()->id;
+            $perPage = $request->get('per_page', 10);
+            $search = $request->input('search');
+            $query = CpLoan::query();
+            $query->where('user_id', $userId);
+            if ($search) {
+                $query->where(
+                    function ($q) use ($search) {
+                        $q->where('loan_number', 'like', "%$search%")
+                            ->orWhere('status', 'like', "%$search%");
+                    }
+                );
+            }
+
+            if ($status = $request->input('status')) {
+                $query->where('status', $status); // assuming "active", "inactive", etc.
+            }
+            $getLoan = $query->paginate($perPage);
+            return response()->json([
+                "status" => true,
+                "loans" => UserLoanResource::collection($getLoan)->response()->getData(true),
+
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
