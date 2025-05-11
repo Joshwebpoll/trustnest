@@ -43,8 +43,9 @@ class LoanController extends Controller
 
             if ($checkLoanTable) {
                 return response()->json([
+                    "status" => false,
                     'message' => 'You already have an existing loan application or active loan.'
-                ], 403);
+                ], 409);
             }
 
             //Get User Wallet Balance, May Use this Later

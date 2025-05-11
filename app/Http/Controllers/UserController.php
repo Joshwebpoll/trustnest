@@ -269,7 +269,9 @@ class UserController extends Controller
 
             // $token = $user->createToken('auth_token', ['*'], now()->addHour(1))->plainTextToken;
             $token = $user->createToken('auth_token')->plainTextToken;
-
+            if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+                return 'jeiie';
+            }
 
             return response()->json([
                 "message" => "successfully login",
@@ -300,6 +302,24 @@ class UserController extends Controller
             ], 400);
         }
     }
+
+    public function getActiveUser()
+    {
+        try {
+            $user = User::where('id', Auth::user()->id)->where('status', "enable")->first();
+            if ($user) {
+                return response()->json([
+                    'status' => true,
+                    'user' => $user
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
     public function UpdateprofileDetails(Request $request)
     {
         try {
@@ -308,7 +328,17 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email,' . $currentUser->id,
                 'username' => 'required|string|min:3|max:20|alpha_dash',
-                'phone_number' => 'required|string',
+                //'phone_number' => 'required|string',
+                'surname' => 'required|string|max:255',
+                'lastname' => 'required|string|max:255',
+                'phone_number' => ['required', 'regex:/^\+?[0-9]{7,15}$/'],
+                'gender' => 'required|in:male,female,other',
+                'date_of_birth' => 'required|date',
+                'country' => 'required|string|max:255',
+                'state' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
+                'city' => 'required|string|max:255',
+
             ]);
 
             if ($validator->fails()) {
@@ -321,11 +351,20 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 "username" => $request->username,
-                "phone_number" => $request->phone_number
+                "phone_number" => $request->phone_number,
+                'surname' => $request->surname,
+                'lastname' => $request->lastname,
+                'gender' => $request->gender,
+                'date_of_birth' => $request->date_of_birth,
+                'country' => $request->country,
+                'state' => $request->state,
+                'address' => $request->address,
+                'city' => $request->city,
+
             ]);
             return response()->json([
                 "status" => true,
-                "messages" => "Profile updated successfully"
+                "message" => "Profile updated successfully"
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -371,6 +410,34 @@ class UserController extends Controller
                 'status' => true,
                 'message' => 'Otp sent to your email successfully'
             ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+    public function updatePassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "current_password" => 'required|min:6',
+                'password' => 'required|min:6|confirmed',
+
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+            $checkOldPassword  = User::where('id', Auth::user()->id)->first();
+            if (!$checkOldPassword || !Hash::check($request->current_password, $checkOldPassword->password)) {
+                return response()->json(['status' => false, 'message' => 'Old password is incorrect, Please try again later'], 500);
+            }
+            $checkOldPassword->update([
+                "password" => Hash::make($request->password)
+            ]);
+
+            return response()->json(['status' => true, 'message' => 'Password updated successfully'], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -475,5 +542,21 @@ class UserController extends Controller
     public function getUserAccount(Request $request)
     {
         $users = Auth::user()->id;
+    }
+
+
+    public  function you(Request $request)
+    {
+        // For session-based authentication
+        $credentials = $request->only('email', 'password');
+        if (Auth::attempt($credentials)) {
+            // $request->session()->regenerate();
+            $user = User::where('email', $request->email)->first();
+            //  $token = $user->createToken('auth_token')->plainTextToken;
+            return response()->json([
+                'message' => 'Successfully logged out!',
+                // 'token' => $token
+            ]);
+        }
     }
 }

@@ -102,7 +102,7 @@ class AdminCreateUsers extends Controller
 
             return response()->json([
                 "status" => true,
-                "users" => new UserResource($singleLoan),
+                "user" => new UserResource($singleLoan),
 
             ], 200);
         } catch (\Exception $e) {

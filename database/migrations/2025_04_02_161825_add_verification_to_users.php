@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('lastname')->nullable()->after("surname");
             $table->string('nin')->nullable();
             $table->string("bvn")->nullable();
-            $table->string("gender")->nullable();
+            $table->enum("gender", ['male', 'female'])->nullable();
             $table->date('date_of_birth')->nullable();
         });
     }

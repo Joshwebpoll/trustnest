@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Crypt;
 
-class AdminLoanResource extends JsonResource
+class SingleLoanResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -28,7 +28,8 @@ class AdminLoanResource extends JsonResource
             "total_payable" => Crypt::decryptString($this->total_payable, 2),
             "remaining_balance" => Crypt::decryptString($this->remaining_balance, 2),
             "total_paid" => Crypt::decryptString($this->total_paid, 2),
-
+            'name' => $this->guarantor->name,
+            '' => $this->guarantor->email
         ];
     }
 }

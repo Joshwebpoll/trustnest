@@ -14,12 +14,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
+        $middleware->alias(
+            [
 
-            'is_admin' => AdminMiddleware::class,
-            "is_user" => UserMiddleware::class
+                'is_admin' => AdminMiddleware::class,
+                "is_user" => UserMiddleware::class
 
-        ]);
+            ],
+        );
+    })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

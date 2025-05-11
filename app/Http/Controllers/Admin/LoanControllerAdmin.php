@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminLoanResource;
+use App\Http\Resources\SingleLoanResource;
 use App\Mail\LoanEmailToAdmin;
 use App\Mail\LoanEmailToUser;
 use App\Mail\LoanUpdateByAdmin;
@@ -26,6 +27,7 @@ class LoanControllerAdmin extends Controller
             $perPage = $request->get('per_page', 10);
             $search = $request->input('search');
             $query = CpLoan::query();
+
             if ($search) {
                 $query->where(
                     function ($q) use ($search) {
@@ -231,7 +233,7 @@ class LoanControllerAdmin extends Controller
 
             return response()->json([
                 "status" => true,
-                "loans" => new AdminLoanResource($singleLoan),
+                "loans" => new SingleLoanResource($singleLoan),
 
             ], 200);
         } catch (\Exception $e) {
