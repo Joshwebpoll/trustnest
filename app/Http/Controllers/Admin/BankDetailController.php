@@ -32,7 +32,7 @@ class BankDetailController extends Controller
             $getContribution = $query->paginate($perPage);
             return response()->json([
                 "status" => true,
-                "contributions" => AdminBankDetailResource::collection($getContribution)->response()->getData(true),
+                "banks" => AdminBankDetailResource::collection($getContribution)->response()->getData(true),
 
             ], 200);
         } catch (\Exception $e) {
@@ -63,7 +63,7 @@ class BankDetailController extends Controller
             $getContribution = $query->paginate($perPage);
             return response()->json([
                 "status" => true,
-                "contributions" => AdminAccountResource::collection($getContribution)->response()->getData(true),
+                "accounts" => AdminAccountResource::collection($getContribution)->response()->getData(true),
 
             ], 200);
         } catch (\Exception $e) {

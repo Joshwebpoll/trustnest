@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserDashboardController;
+use App\Http\Controllers\UserVerificationController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WebHook\webHookController;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,9 @@ Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
     Route::get('/user/get_banks', [GetBankController::class, 'getBanks']);
     Route::post('/user/verify_bank', [GetBankController::class, 'verifyBank']);
     Route::get('/user/get_account_number', [GetBankController::class, 'getUserAccountNumber']);
+    Route::get('/user/latest_contribution', [UserDashboardController::class, 'recentContribution']);
+    Route::post('/user/bvn', [UserVerificationController::class, 'verifyBvn']);
+    Route::post('/user/nin', [UserVerificationController::class, 'verifyNin']);
 });
 
 Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
@@ -90,9 +94,9 @@ Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
     Route::post('admin/create_user', [AdminCreateUsers::class, 'createUsers']);
     Route::get('admin/get_single_user/{id}', [AdminCreateUsers::class, 'getSingleUser']);
     Route::put('admin/approve_loan/{id}', [LoanControllerAdmin::class, 'approveLoan']);
-    Route::get('/admin/get_banks', [BankDetailController::class, 'getBanks']);
 });
-
+Route::get('/admin/get_banks', [BankDetailController::class, 'getBanks']);
+Route::get('/admin/get_account', [BankDetailController::class, 'getAccontNumber']);
 
 Route::get('/admin/excel_contribution', [ContributionController::class, 'exportContribution']);
 // Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);

@@ -26,11 +26,14 @@ class Verification
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $output = curl_exec($ch);
-
+        if ($output === false) {
+            $error = curl_error($ch);
+            throw new \Exception('Something went wrong. Please try again later');
+        }
         curl_close($ch);
 
         $json = json_decode($output, true);
-        // print_r($json);
+
 
         $accessToken = $json['responseBody']['accessToken'];
 
@@ -60,11 +63,15 @@ class Verification
 
         if ($response === false) {
             $error = curl_error($ch);
-            echo "cURL Error: $error";
+            throw new \Exception($error);
         } else {
 
             $data = json_decode($response, true);
-            return $data;
+            if ($data["requestSuccessful"] === true && $data['responseMessage'] === 'success') {
+                return $data;
+            } else {
+                throw new \Exception($data["responseMessage"]);
+            }
         }
 
         curl_close($ch);
@@ -77,6 +84,7 @@ class Verification
 
 
         $payload = json_encode($data);
+
         $headers = array(
             'Content-Type:application/json',
             'Authorization: Bearer ' . $this->accessToken // <---
@@ -93,11 +101,26 @@ class Verification
 
         if ($response === false) {
             $error = curl_error($ch);
-            echo "cURL Error: $error";
+            throw new \Exception($error);
         } else {
 
             $data = json_decode($response, true);
-            return $data;
+            if ($data["requestSuccessful"] === true && $data['responseMessage'] === 'success') {
+                // return $data;
+                $bvn = $data['responseBody']['bvn'];
+                $bvnNameMatches = $data['responseBody']['name']['matchStatus'];
+                $bvnPhone = $data['responseBody']['mobileNo'];
+                if ($bvnPhone !== "FULL_MATCH") {
+                    throw new \Exception('Invalid phone number. Please update your phone number in the profile page');
+                }
+
+                if ($bvnNameMatches !== "FULL_MATCH") {
+                    throw new \Exception('Invalid name. Please update your name in the profile page');
+                }
+                return $bvn;
+            } else {
+                throw new \Exception($data["responseMessage"]);
+            }
         }
 
         curl_close($ch);

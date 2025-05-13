@@ -18,7 +18,8 @@ class AdminAccountResource extends JsonResource
             "id" => $this->id,
             "bank_name" => $this->bank_name,
             "bank_account_number" => $this->bank_account_number,
-            "bank_account_name" => $this->bank_account_name
+            "bank_account_name" => $this->bank_account_name,
+            "status" => $this->status
         ];
     }
 }

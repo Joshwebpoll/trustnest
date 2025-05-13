@@ -37,7 +37,9 @@ class User extends Authenticatable
         "is_verified",
         "status",
         'date_of_birth',
-        'gender'
+        'gender',
+        "bvn",
+        "nin"
     ];
 
     /**
