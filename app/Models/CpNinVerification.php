@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User;
 
 class CpNinVerification extends Model
 {
@@ -16,4 +17,8 @@ class CpNinVerification extends Model
         'mobile_number',
         "user_id"
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

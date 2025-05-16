@@ -23,6 +23,7 @@ class SingleMemberResource extends JsonResource
             "phone" => $this->phone,
             "joining_date" => $this->joining_date,
             "status" => $this->status,
+            "email" => $this->email,
             "created_at" => $this->created_at,
             "total_shares" => number_format(Crypt::decryptString($this->total_shares), 2),
             "total_savings" => number_format(Crypt::decryptString($this->total_savings), 2)

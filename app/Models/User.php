@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -39,7 +40,9 @@ class User extends Authenticatable
         'date_of_birth',
         'gender',
         "bvn",
-        "nin"
+        "nin",
+        "referred_by",
+        "referral_code"
     ];
 
     /**
@@ -68,5 +71,40 @@ class User extends Authenticatable
     public function bankAccount()
     {
         return $this->hasOne(AccountDetail::class);
+    }
+    public function ninRecord()
+    {
+        return $this->hasOne(CpNinVerification::class);
+    }
+    // Generate a unique referral code
+    public static function generateUniqueCode()
+    {
+        $code = Str::random(10);
+        while (self::where('referral_code', $code)->exists()) {
+            $code = Str::random(8);
+        }
+        return $code;
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Temporary code to allow creation
+        static::creating(function ($user) {
+            $user->referral_code = 'TEMP'; // Will be updated post-save
+        });
+
+        static::created(function ($user) {
+            $prefix = 'ARAROMI';
+            $date = now()->format('Ymd');
+            $random = strtoupper(Str::random(6));
+            $user->referral_code = "{$prefix}-{$user->id}-{$date}-{$random}";
+            $user->save();
+        });
+    }
+    public function referredUsers()
+    {
+        return $this->hasMany(User::class, 'referred_by');
     }
 }

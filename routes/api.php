@@ -2,12 +2,14 @@
 
 use App\Helper\VerifyUserAccountDetails;
 use App\Http\Controllers\Admin\AdminCreateUsers;
+use App\Http\Controllers\Admin\AdminDashboardSummary;
 use App\Http\Controllers\Admin\BankDetailController;
 use App\Http\Controllers\Admin\ContributionController;
 use App\Http\Controllers\Admin\SavingController as AdminSavingController;
 use App\Http\Controllers\Admin\InterestController as AdminInterestController;
 use App\Http\Controllers\Admin\LoanControllerAdmin;
 use App\Http\Controllers\Admin\MembersController;
+use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\RepaymentController;
 use App\Http\Controllers\Admin\UserSettingsController;
 use App\Http\Controllers\GetBankController;
@@ -21,9 +23,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserDashboardController;
+use App\Http\Controllers\UserReferralController;
 use App\Http\Controllers\UserVerificationController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WebHook\webHookController;
+use App\Http\Resources\UserReferralResource;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/user', function (Request $request) {
@@ -39,12 +43,13 @@ Route::post('/forgot_password', [UserController::class, 'forgotPassword']);
 Route::post('/reset_password', [UserController::class, 'ResetPassword']);
 Route::post('/password_reset', [UserController::class, 'PasswordReset']);
 Route::get('/user/get_banks', [GetBankController::class, 'getBanks']);
+Route::get('/user/get_referral', [UserReferralController::class, 'getReferral']);
 // Route::get('/static', function () {
 //     echo VerifyUserAccountDetails::verifyBankDetails();
 // });
 
 Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
-    Route::get('/profile', [UserController::class, 'profileDetails']);
+    Route::get('/user/profile', [UserController::class, 'profileDetails']);
     Route::get('/user/personal_user', [UserController::class, 'getActiveUser']);
     Route::post('/user/update_profile', [UserController::class, 'UpdateprofileDetails']);
     Route::post('/user/update_password', [UserController::class, 'updatePassword']);
@@ -95,8 +100,12 @@ Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
     Route::get('admin/get_single_user/{id}', [AdminCreateUsers::class, 'getSingleUser']);
     Route::put('admin/approve_loan/{id}', [LoanControllerAdmin::class, 'approveLoan']);
 });
+Route::get('/admin/dashboard_summary', [AdminDashboardSummary::class, 'dashboardSummary']);
 Route::get('/admin/get_banks', [BankDetailController::class, 'getBanks']);
 Route::get('/admin/get_account', [BankDetailController::class, 'getAccontNumber']);
+Route::get('/admin/get_referrals', [ReferralController::class, 'getAllReferral']);
+Route::get('/admin/reward', [ReferralController::class, 'getReferralRwardPercent']);
+Route::put('admin/update_referral/{id}', [ReferralController::class, 'updateReferralReward']);
 
 Route::get('/admin/excel_contribution', [ContributionController::class, 'exportContribution']);
 // Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);

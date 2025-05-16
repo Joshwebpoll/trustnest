@@ -26,6 +26,7 @@ class UserLoanResource extends JsonResource
             "total_payable" => Crypt::decryptString($this->total_payable, 2),
             "remaining_balance" => Crypt::decryptString($this->remaining_balance, 2),
             "total_paid" => Crypt::decryptString($this->total_paid, 2),
+            "created_at" => $this->created_at,
         ];
     }
 }

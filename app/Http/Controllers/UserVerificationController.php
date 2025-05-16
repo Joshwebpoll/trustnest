@@ -73,9 +73,9 @@ class UserVerificationController extends Controller
             $validator = Validator::make($request->all(), [
 
                 'nin' => ['required', 'digits:11'],
-                'nin_phone_number' => ['required', 'digits:11'],
-                'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
-                'gender' => ['required', 'in:male,female,other'],
+                // 'nin_phone_number' => ['required', 'digits:11'],
+                // 'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
+                // 'gender' => ['required', 'in:male,female,other'],
 
 
             ]);

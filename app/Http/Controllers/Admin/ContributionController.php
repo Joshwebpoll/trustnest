@@ -10,6 +10,8 @@ use App\Models\CpContribution;
 use App\Models\CpLoan;
 use App\Models\CpMember;
 use App\Models\CpMembers;
+use App\Models\CpReferralPercentage;
+use App\Models\CpUserReferral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -45,6 +47,20 @@ class ContributionController extends Controller
 
             $checkUserHasLoan = CpLoan::where('user_id', $request->user_id)->count();
             $compareAcctNumber = AccountDetail::where('user_id', $request->user_id)->first();
+            //Reward User if Successfully Add Contribution
+            $trackReferral = CpUserReferral::where('referrer_id', $request->user_id)->where('status', 'pending')->first();
+            if ($trackReferral) {
+                $getpercent = CpReferralPercentage::latest()->first();
+                $rewardInterest = $getpercent->referral_reward_percent;
+                $dcryptBal = Crypt::decryptString($trackReferral->reward_amount);
+                $dcryptBal += $request->amount_contributed * $rewardInterest / 100;
+                $trackReferral->update([
+                    "asUserContributed" => "yes",
+                    'status' => 'completed',
+                    "reward_amount" => Crypt::encryptString($dcryptBal)
+
+                ]);
+            }
 
             if ($compareAcctNumber->account_number != $request->account_number) {
                 return response()->json([

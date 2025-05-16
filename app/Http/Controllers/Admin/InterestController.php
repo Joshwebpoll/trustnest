@@ -16,25 +16,25 @@ class InterestController extends Controller
     public function getInterest(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 10);
-            //  $search = $request->input('search');
-            $query = CpInterestRate::query();
-            // if ($search) {
-            //     $query->where(
-            //         function ($q) use ($search) {
-            //             $q->where('membership_number', 'like', "%$search%")
-            //                 ->orWhere('status', 'like', "%$search%");
-            //         }
-            //     );
-            // }
+            // $perPage = $request->get('per_page', 10);
+            // //  $search = $request->input('search');
+            // $query = CpInterestRate::query();
+            // // if ($search) {
+            // //     $query->where(
+            // //         function ($q) use ($search) {
+            // //             $q->where('membership_number', 'like', "%$search%")
+            // //                 ->orWhere('status', 'like', "%$search%");
+            // //         }
+            // //     );
+            // // }
 
-            // if ($status = $request->input('status')) {
-            //     $query->where('status', $status); // assuming "active", "inactive", etc.
-            // }
-            $getLoan = $query->paginate($perPage);
+            // // if ($status = $request->input('status')) {
+            // //     $query->where('status', $status); // assuming "active", "inactive", etc.
+            // // }
+            $getInterest = CpInterestRate::first();
             return response()->json([
                 "status" => true,
-                "interests" => InterestResource::collection($getLoan)->response()->getData(true),
+                "interest" => $getInterest,
 
             ], 200);
         } catch (\Exception $e) {
@@ -81,8 +81,8 @@ class InterestController extends Controller
         try {
             $validator = Validator::make($request->all(), [
 
-                // 'min_amount' => 'required|numeric|min:0',
-                // 'max_amount' => 'required|numeric|min:0',
+                'min_amount' => 'nullable|numeric|min:0',
+                'max_amount' => 'nullable|numeric|min:0',
                 'interest_rate' => 'required|numeric|min:0',
 
             ]);
@@ -97,18 +97,29 @@ class InterestController extends Controller
                     "message" => "Record not found"
                 ], 404);
             }
+            $updateInterestRates->fill($validator->validated());
+
+            if (!$updateInterestRates->isDirty()) {
+                return response()->json([
+                    'status' => true,
+                    "message" => "No changes detected"
+                ], 200);
+            }
             $updateInterestRates->update([
-                'interest_rate' => $request->interest_rate
+                'interest_rate' => $request->interest_rate,
+                'min_amount' => $request->min_amount,
+                'max_amount' => $request->max_amount
+
             ]);
             return response()->json([
                 'status' => true,
-                "message" => "updated succesfully"
+                "message" => "Interest rate updated succesfully"
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
-            ], 401);
+            ], 500);
         }
     }
 

@@ -6,6 +6,7 @@ use App\Http\Resources\UserDashboardContributionResource;
 use App\Models\CpContribution;
 use App\Models\CpLoan;
 use App\Models\CpRepayment;
+use App\Models\CpUserReferral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -29,6 +30,7 @@ class UserDashboardController extends Controller
             $pendingLoans = CpLoan::where('user_id', $userid)->whereIn('status', ['pending'])->count();
             $completedLoans = CpLoan::where('user_id', $userid)->whereIn('status', ['completed'])->count();
             $totalRepayment = CpRepayment::where('user_id', $userid)->sum('repayment_amount');
+            $totalReferrals = CpUserReferral::where('referred_user_id', $userid)->count();
             // $toatlLoanAmount = CpLoan::where('user_id', $userid)->whereIn('status', ['approved', 'disbursed'])->get();
 
 
@@ -40,8 +42,8 @@ class UserDashboardController extends Controller
                 "active_loans" => $activeLoans,
                 "pending_loans" => $pendingLoans,
                 "completedLoans" => $completedLoans,
-                "total_repayment" => $totalRepayment
-                // "totalLoanAmount" => $toatlLoanAmount
+                "total_repayment" => $totalRepayment,
+                "totalReferrals" => $totalReferrals
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

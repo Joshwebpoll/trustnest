@@ -8,12 +8,14 @@ use App\Mail\ResentEmail;
 use App\Models\WalletUser;
 // use Illuminate\Foundation\Auth\User;
 use App\Helper\BankAccount;
+use App\Helper\UserReferral;
 use App\Jobs\RegisterEmailJob;
 use Illuminate\Http\Request;
 use App\Models\AccountDetail;
 use App\Mail\registrationEmail;
 use App\Models\CpMember;
 use App\Models\CpMembers;
+use App\Models\CpUserReferral;
 use App\Models\UniqueBankAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -35,6 +37,7 @@ class UserController extends Controller
                 'username' => 'required|string|unique:users,username|min:3|max:20',
                 'password' => 'required|min:6|confirmed',
                 'phone_number' => 'required|unique:users',
+                "referral_code" => 'nullable|string|exists:users,referral_code'
             ]);
 
             if ($validator->fails()) {
@@ -42,7 +45,6 @@ class UserController extends Controller
             }
             $otp = rand(100000, 999999);
             $otpExpiresAt = Carbon::now()->addMinutes(5);
-
             // Create user
             $user = User::create([
                 'name' => $request->name,
@@ -51,8 +53,36 @@ class UserController extends Controller
                 "username" => $request->username,
                 "otp_number" => $otp,
                 "otp_expires_at" => $otpExpiresAt,
-                "phone_number" => $request->phone_number
+                "phone_number" => $request->phone_number,
+                //  "referral_code" => $referralCode
             ]);
+
+            //Check maybe referral code exist
+
+            // Process referral if code was provided
+            $checkReferral = null;
+            if (!empty($request->referral_code)) {
+                $checkReferral = User::where('referral_code', $request->referral_code)->where('status', 'enable')->first();
+                if ($checkReferral && $checkReferral->id === $user->id) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'You cannot refer yourself.',
+                    ], 422);
+                }
+            }
+            if ($checkReferral) {
+                CpUserReferral::create([
+                    'referrer_id' => $user->id,
+                    "referred_user_id" => $checkReferral->id,
+                    "reward_amount" => Crypt::encryptString(0),
+                ]);
+                $user->update([
+                    "referred_by" => $checkReferral->id
+                ]);
+            }
+
+
+
             $membershipNumber = 'MEM' . str_pad(CpMember::count() + 1, 4, '0', STR_PAD_LEFT);
             $id_number = 'MEM-' . strtoupper(uniqid() . mt_rand(1000, 9999));
             CpMember::create([
@@ -76,7 +106,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
-            ], 401);
+            ], 500);
         }
     }
     public function verifyEmail(Request $request)
@@ -103,7 +133,7 @@ class UserController extends Controller
                 ], 404);
             }
             if ($getverificationEmail->otp_number !== $request->emailCode) {
-                return response()->json(['message' => 'Invalid OTP'], 400);
+                return response()->json(['status' => false, 'message' => 'Invalid OTP'], 400);
             }
             if (Carbon::now()->greaterThan($getverificationEmail->otp_expires_at)) {
                 return response()->json([
@@ -270,15 +300,13 @@ class UserController extends Controller
             // $token = $user->createToken('auth_token', ['*'], now()->addHour(1))->plainTextToken;
             $token = $user->createToken('auth_token')->plainTextToken;
             if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-                return 'jeiie';
+                return response()->json([
+                    "message" => "successfully login",
+                    "status" => true,
+                    "user" => $user,
+                    'token' => $token,
+                ], 200);
             }
-
-            return response()->json([
-                "message" => "successfully login",
-                "status" => true,
-                "user" => $user,
-                'token' => $token,
-            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -293,7 +321,7 @@ class UserController extends Controller
             $currentUser = Auth::user();
             return response()->json([
                 "status" => true,
-                "messages" => $currentUser
+                "user" => $currentUser
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -306,7 +334,7 @@ class UserController extends Controller
     public function getActiveUser()
     {
         try {
-            $user = User::where('id', Auth::user()->id)->where('status', "enable")->first();
+            $user = User::where('id', Auth::user()->id)->where('status', "enable")->with('ninRecord')->first();
             if ($user) {
                 return response()->json([
                     'status' => true,
@@ -346,6 +374,15 @@ class UserController extends Controller
             }
 
             $updateUser = User::where('id', $currentUser->id)->first();
+
+            $updateUser->fill($validator->validated());
+
+            if (!$updateUser->isDirty()) {
+                return response()->json([
+                    'status' => true,
+                    "message" => "No changes detected"
+                ], 200);
+            }
 
             $updateUser->update([
                 'name' => $request->name,
@@ -422,7 +459,7 @@ class UserController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 "current_password" => 'required|min:6',
-                'password' => 'required|min:6|confirmed',
+                'password' => 'required|min:6|confirmed|different:current_password',
 
             ]);
 
@@ -432,6 +469,15 @@ class UserController extends Controller
             $checkOldPassword  = User::where('id', Auth::user()->id)->first();
             if (!$checkOldPassword || !Hash::check($request->current_password, $checkOldPassword->password)) {
                 return response()->json(['status' => false, 'message' => 'Old password is incorrect, Please try again later'], 500);
+            }
+
+            $checkOldPassword->fill($validator->validated());
+
+            if (!$checkOldPassword->isDirty()) {
+                return response()->json([
+                    'status' => true,
+                    "message" => "No changes detected"
+                ], 200);
             }
             $checkOldPassword->update([
                 "password" => Hash::make($request->password)
@@ -476,7 +522,7 @@ class UserController extends Controller
             if (Carbon::now()->greaterThan($users->reset_password_expires)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Reset Otp as expire, Please try again'
+                    'message' => 'Reset Otp as expire. Please click on resend otp to get a new password'
                 ], 400);
             }
 
@@ -510,6 +556,7 @@ class UserController extends Controller
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
+
             $resetUserPass = User::where('reset_password', $request->resetCode)->first();
             if (!$resetUserPass) {
                 return response()->json([
