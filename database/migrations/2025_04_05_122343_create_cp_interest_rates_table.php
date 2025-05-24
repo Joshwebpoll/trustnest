@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->decimal('min_amount', 15, 2)->nullable(); // Minimum loan amount
             $table->decimal('max_amount', 15, 2)->nullable(); // Maximum loan amount
-            $table->decimal('interest_rate', 5, 2); // Interest rate percentage
+            $table->string('interest_rate'); // Interest rate percentage
+            $table->string('max_interest_rate')->nullable();
+            $table->string('min_interest_rate')->nullable();
+            $table->decimal('loan_duration', 5, 2)->nullable(); // Interest rate percentage
             $table->timestamps();
         });
     }

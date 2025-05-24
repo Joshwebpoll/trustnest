@@ -218,13 +218,13 @@ class UserController extends Controller
 
             $user = User::where('email', $request->email)->first();
             if (!$user || !Hash::check($request->password, $user->password)) {
-                return response()->json(["status" => false, "message" => "Invalid email or password"], 401);
+                return response()->json(["status" => false, "message" => "Invalid email or password"], 500);
             }
             if ($user->is_verified !== 0) {
-                return response()->json(["status" => false, "message" => "Please verify your email to continue"], 401);
+                return response()->json(["status" => false, "message" => "Please verify your email to continue"], 500);
             }
             if ($user->status !== "enable") {
-                return response()->json(["status" => false, "message" => "Your account as been disable, Please chat the support"], 401);
+                return response()->json(["status" => false, "message" => "Your account as been disable, Please chat the support"], 500);
             }
 
 
@@ -301,7 +301,7 @@ class UserController extends Controller
             $token = $user->createToken('auth_token')->plainTextToken;
             if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
                 return response()->json([
-                    "message" => "successfully login",
+                    "message" => "Login was successful. Redirecting...",
                     "status" => true,
                     "user" => $user,
                     'token' => $token,
@@ -311,7 +311,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], 500);
         }
     }
     public function profileDetails()
@@ -578,12 +578,22 @@ class UserController extends Controller
     {
         try {
             $request->user()->tokens()->delete();
-            return response()->json(['status' => false, 'message' => 'Logged out successfully'], 200);
+            // $request->user()->currentAccessToken()->delete();
+            // Auth::logout();
+
+
+
+            $request->session()->invalidate();
+
+
+
+            $request->session()->regenerateToken();
+            return response()->json(['status' => true, 'message' => 'Logged out successfully'], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            // return response()->json([
+            //     'status' => false,
+            //     'message' => $e->getMessage()
+            // ], 400);
         }
     }
     public function getUserAccount(Request $request)

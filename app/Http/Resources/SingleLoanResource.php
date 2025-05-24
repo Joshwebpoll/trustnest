@@ -28,8 +28,8 @@ class SingleLoanResource extends JsonResource
             "total_payable" => Crypt::decryptString($this->total_payable, 2),
             "remaining_balance" => Crypt::decryptString($this->remaining_balance, 2),
             "total_paid" => Crypt::decryptString($this->total_paid, 2),
-            'name' => $this->guarantor->name,
-            '' => $this->guarantor->email
+            // 'name' => $this->guarantor->name,
+            // '' => $this->guarantor->email
         ];
     }
 }

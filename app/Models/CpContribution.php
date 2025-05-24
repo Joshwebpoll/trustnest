@@ -18,10 +18,12 @@ class CpContribution extends Model
         'payment_method',
         'contribution_date',
         'status',
+        'processed_by',
         'contribution_deposit_type',
         'processed_by_id',
         'processed_by_name',
-        'processed_by_email'
+        'processed_by_email',
+
 
     ];
     // 👇 this will expose the decrypted value

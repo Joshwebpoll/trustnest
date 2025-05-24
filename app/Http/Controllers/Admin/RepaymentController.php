@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helper\GeneralHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RepaymentResource;
 use App\Models\AccountDetail;
 use App\Models\CpContribution;
+use App\Models\CpInterestRate;
 use App\Models\CpLoan;
 use App\Models\CpMember;
 use App\Models\CpRepayment;
@@ -64,12 +66,12 @@ class RepaymentController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'loan_id' => 'required|string',
-                'user_id' => 'required',
+                'customer_account_number' => 'required',
+                'membership_number' => 'nullable |string',
                 'repayment_amount' => 'required|string',
                 // 'remaining_balance' => 'required|string',
                 'payment_method' => 'required|string',
-                'repayment_date' => 'required|date',
+                'loan_number' => 'required|string',
                 'status' => 'required|string|in:pending,completed,processing',
             ]);
 
@@ -77,103 +79,121 @@ class RepaymentController extends Controller
                 return response()->json($validator->errors(), 422);
             }
 
-            $checkLoanReapyment = CpLoan::where('user_id', $request->user_id)->whereIn('status', ['approved', 'disbursed'])->first();
+            $checkLoanReapyment = CpLoan::where('loan_number', $request->loan_number)->whereIn('status', ['approved', 'disbursed'])->first();
+
+
             if ($checkLoanReapyment) {
+                $amountRequested = Crypt::decryptString($checkLoanReapyment->amount);
                 $remaining_balance = Crypt::decryptString($checkLoanReapyment->remaining_balance);
                 $total_payable = Crypt::decryptString($checkLoanReapyment->total_payable);
                 $total_paid = Crypt::decryptString($checkLoanReapyment->total_paid);
+                $total_interest_paid  = Crypt::decryptString($checkLoanReapyment->total_interest_paid);
+                $increasingAmount =  Crypt::decryptString($checkLoanReapyment->increasing_amount);
+                $decreasing_amount =  Crypt::decryptString($checkLoanReapyment->decreasing_amount);
+                $over_paid =  Crypt::decryptString($checkLoanReapyment->over_paid);
+
+
                 //Check maybe the users as finish paying
                 $remainingBalanceToBePaid = bcsub($remaining_balance, $request->repayment_amount, 2);
-                $checkLoanPaidFully = bccomp($total_paid, $total_payable, 2);
+                // $checkLoanPaidFully = bccomp($total_paid, $total_payable, 2);
                 $calculate_total_paid = bcadd($total_paid, $request->repayment_amount, 2);
+                // $decimal = bcdiv($checkLoanReapyment->interest_rate, '100', 4);
+                $getInterst = new GeneralHelper();
+                $InterstRatePaid = $getInterst->CalculateInterest($remaining_balance, $checkLoanReapyment->interest_rate); //bcmul($remaining_balance, $decimal, 4);
+                //add it to interest rate starting from zero
+                $totalInterstRatePaid = bcadd($total_interest_paid, $InterstRatePaid, 2);
+                $deCreaseingAmount = bcsub($decreasing_amount, $request->repayment_amount, 2);
+                // $totalAmountPaidSofar = bcadd($request->repayment_amount, $checkLoanReapyment->total_paid, 2);
+                //$totalAmountPaidSofarSecond = bcadd($request->repayment_amount, $checkLoanReapyment->increasing_amount, 2);
+                $balanceIncreasing = bcadd($request->repayment_amount, $increasingAmount, 2);
+
 
                 $transaction_id = 'RPY-' . strtoupper(uniqid() . mt_rand(1000, 9999));
                 $reference_no = Str::uuid();
                 $checkForRepayMentDuplicate = CpRepayment::where("transaction_reference", $transaction_id)->count();
                 if ($checkForRepayMentDuplicate === 0) {
-                    if ($checkLoanPaidFully === 0) {
+
+
+                    if ($amountRequested === $total_paid || $amountRequested < $total_paid || $request->repayment_amount >= $remaining_balance) {
+                        //$overPaid = bcsub($request->repayment_amount, $remaining_balance, 2);
+                        $overPaid = bcsub($request->repayment_amount, $remaining_balance, 2);
+                        $addOverPaid = bcadd($over_paid, $overPaid);
+                        $remainingDueNotOverPaid = bcsub($amountRequested, $increasingAmount, 2);
+                        $remainingTotalPaid = bcsub($remaining_balance, $remainingDueNotOverPaid, 2);
+                        $remainigTotalPaid = bcadd($total_paid, $remainingDueNotOverPaid);
+                        $remainDecreasingBal = bcsub($decreasing_amount, $remainingDueNotOverPaid, 2);
+                        $remainIncreasingBal = bcadd($remainingDueNotOverPaid, $increasingAmount, 2);
+                        // return [$remainingDueNotOverPaid, $overPaid];
                         $checkLoanReapyment->update([
-                            "status" => "completed"
+                            "status" => "completed",
+                            "remaining_balance" => Crypt::encryptString($remainingTotalPaid),
+                            "total_paid" => Crypt::encryptString($remainigTotalPaid),
+                            "decreasing_amount" => Crypt::encryptString($remainDecreasingBal),
+                            "increasing_amount" => Crypt::encryptString($remainIncreasingBal),
+                            "total_paid" => Crypt::encryptString($remainigTotalPaid),
+                            "total_interest_paid" => Crypt::encryptString($totalInterstRatePaid),
+                            "over_paid" => Crypt::encryptString($addOverPaid)
                         ]);
-                    } elseif ($checkLoanPaidFully === -1) {
-                        CpRepayment::create([
-                            "loan_id" => $request->loan_id,
-                            "user_id" => $request->user_id,
-                            "repayment_amount" => $request->repayment_amount,
-                            "remaining_balance" => $remainingBalanceToBePaid,
-                            "payment_method" => $request->payment_method,
-                            "due_date" => Carbon::now()->addMonth(),
-                            "transaction_reference" => $transaction_id,
-                            "repayment_date" => now(),
-                            "status" => $request->status
-                        ]);
+                        CpRepayment::create(
+                            [
+                                "loan_id" => $checkLoanReapyment->id,
+                                "user_id" => $checkLoanReapyment->user_id,
+                                "repayment_amount" => $request->repayment_amount,
+                                "remaining_balance" => $remainingTotalPaid,
+                                "payment_method" => $request->payment_method,
+                                "due_date" => Carbon::now()->addMonth(),
+                                "transaction_reference" => $transaction_id,
+                                "repayment_date" => now(),
+                                "status" => $request->status,
+                                "interest_paid" => $totalInterstRatePaid
+
+
+                            ]
+                        );
+                        //Send Mail To User that Loan as been paid successfully
+                        return response()->json([
+                            "status" => true,
+                            "message" => "Loan is completed, proceed to saving",
+                        ], 200);
+                    } else {
+                        CpRepayment::create(
+                            [
+                                "loan_id" => $checkLoanReapyment->id,
+                                "user_id" => $checkLoanReapyment->user_id,
+                                "repayment_amount" => $request->repayment_amount,
+                                "remaining_balance" => $remainingBalanceToBePaid,
+                                "payment_method" => $request->payment_method,
+                                "due_date" => Carbon::now()->addMonth(),
+                                "transaction_reference" => $transaction_id,
+                                "repayment_date" => now(),
+                                "status" => $request->status,
+                                "interest_paid" => $totalInterstRatePaid
+
+
+                            ]
+                        );
                         $checkLoanReapyment->update([
                             "remaining_balance" => Crypt::encryptString($remainingBalanceToBePaid),
-                            "total_paid" => Crypt::encryptString($calculate_total_paid)
+                            "total_paid" => Crypt::encryptString($calculate_total_paid),
+                            "decreasing_amount" => Crypt::encryptString($deCreaseingAmount),
+                            "increasing_amount" => Crypt::encryptString($balanceIncreasing),
+                            "total_paid" => Crypt::encryptString($calculate_total_paid),
+                            "total_interest_paid" => Crypt::encryptString($totalInterstRatePaid),
 
                         ]);
-                    } else {
-                        //  PROCCESS REFUND
-                        $transaction_id = 'CONT-' . strtoupper(uniqid() . mt_rand(1000, 9999));
-
-                        $refundOverPaid = bcsub($total_paid, $total_payable, 2);
-                        $checkLoanReapyment->update([
-                            "status" => "completed"
-                        ]);
-
-                        $updateMemberPayment = CpMember::where('user_id', $request->user_id)->where('status', 'active')->first();
-                        $getAccountNumber = AccountDetail::where('user_id', $request->user_id)->first();
-                        $depositAmounts = bcdiv($refundOverPaid, "2", 0);
-
-                        $decryptShares = Crypt::decryptString($updateMemberPayment->total_shares);
-                        $decryptSavings = Crypt::decryptString($updateMemberPayment->total_savings);
-                        $addBalanceSavings = bcadd($decryptSavings,  $depositAmounts, 2);
-                        $addBalanceShares = bcadd($decryptShares, $depositAmounts, 2);
-                        $updateMemberPayment->update([
-                            "total_savings" => Crypt::encryptString($addBalanceSavings),
-                            "total_shares" => Crypt::encryptString($addBalanceShares)
-                        ]);
-                        CpContribution::create([
-                            "member_id" => $updateMemberPayment->id,
-                            "transaction_id" => $transaction_id,
-                            "contribution_type" => 'savings',
-                            "amount_contributed" => Crypt::encryptString($depositAmounts),
-                            "payment_method" => 'Refund Loan Repayment',
-                            "reference_number" => $reference_no,
-                            'account_number' => $getAccountNumber->account_number,
-                            "contribution_date" => now(),
-                            "status" => 'completed',
-                            "contribution_deposit_type" => 'cash',
-                            "processed_by" => "Automatic Payment"
-                        ]);
-                        CpContribution::create([
-                            "member_id" => $updateMemberPayment->id,
-                            "transaction_id" => $transaction_id,
-                            "contribution_type" => 'shares',
-                            "amount_contributed" => Crypt::encryptString($depositAmounts),
-                            "payment_method" => 'Refund Loan Repayment',
-                            "reference_number" => $reference_no,
-                            'account_number' =>  $getAccountNumber->account_number,
-                            "contribution_date" => now(),
-                            "status" => 'completed',
-                            "contribution_deposit_type" => 'cash',
-                            "processed_by" => "Automatic Payment"
-                        ]);
+                        return response()->json([
+                            "status" => true,
+                            "message" => "Repayment successful",
+                        ], 200);
                     }
-                    return response()->json([
-                        "status" => true,
-                        "message" => "Repayment successfull",
-
-
-                    ], 200);
                 }
             } else {
                 return response()->json([
-                    "status" => true,
-                    "message" => "Loan as been completed successfuly",
+                    "status" => false,
+                    "message" => "Loan still pending or completed",
 
 
-                ], 200);
+                ], 404);
             }
         } catch (\Exception $e) {
             return response()->json([

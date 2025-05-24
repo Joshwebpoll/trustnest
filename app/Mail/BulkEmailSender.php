@@ -9,20 +9,19 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class LoanUpdateByAdmin extends Mailable
+class BulkEmailSender extends Mailable
 {
     use Queueable, SerializesModels;
 
     /**
      * Create a new message instance.
      */
+    public $details;
 
-    public $loan;
-    public $getUser;
-    public function __construct($loan, $getUser)
+
+    public function __construct($details)
     {
-        $this->loan = $loan;
-        $this->getUser = $getUser;
+        $this->details = $details;
     }
 
     /**
@@ -31,7 +30,7 @@ class LoanUpdateByAdmin extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Loan Update By Admin',
+            subject: 'New Message',
         );
     }
 
@@ -41,7 +40,7 @@ class LoanUpdateByAdmin extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mails.loanApprovalStatus',
+            view: 'mails.bulkEmail',
         );
     }
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('loan_number')->unique();
             $table->text('amount');
-            $table->decimal('interest_rate', 5, 2);
+            $table->string('interest_rate');
             $table->integer('duration_months')->default(12);
             $table->text('monthly_repayment')->nullable();
             $table->text('total_payable')->nullable();
@@ -28,6 +28,12 @@ return new class extends Migration
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->date('application_date');
+            $table->text('total_interest_paid')->nullable();
+            $table->string("customer_account_number")->nullable();
+            $table->string("membership_number")->nullable();
+            $table->string("decreasing_amount")->nullable();
+            $table->string("increasing_amount")->nullable();
+            $table->text("over_paid")->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected', 'disbursed', 'completed', 'defaulted'])->default('pending');
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();

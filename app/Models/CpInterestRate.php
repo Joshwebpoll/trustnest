@@ -10,5 +10,6 @@ class CpInterestRate extends Model
         'min_amount',
         'max_amount',
         'interest_rate',
+        'loan_duration'
     ];
 }

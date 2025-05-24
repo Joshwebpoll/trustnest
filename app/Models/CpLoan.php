@@ -26,7 +26,15 @@ class CpLoan extends Model
         'application_date',
         'approved_by',
         'approved_at',
-        'purpose'
+        'purpose',
+        "total_interest_paid",
+        "customer_account_number",
+        "membership_number",
+        "decreasing_amount",
+        "increasing_amount",
+        "remaining_balance",
+        "total_paid",
+        'over_paid'
     ];
 
     protected $casts = [

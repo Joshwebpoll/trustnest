@@ -3,7 +3,9 @@
 use App\Helper\VerifyUserAccountDetails;
 use App\Http\Controllers\Admin\AdminCreateUsers;
 use App\Http\Controllers\Admin\AdminDashboardSummary;
+use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\BankDetailController;
+use App\Http\Controllers\Admin\BulkEmailController;
 use App\Http\Controllers\Admin\ContributionController;
 use App\Http\Controllers\Admin\SavingController as AdminSavingController;
 use App\Http\Controllers\Admin\InterestController as AdminInterestController;
@@ -42,13 +44,13 @@ Route::get('/profile', [UserController::class, 'profileDetails']);
 Route::post('/forgot_password', [UserController::class, 'forgotPassword']);
 Route::post('/reset_password', [UserController::class, 'ResetPassword']);
 Route::post('/password_reset', [UserController::class, 'PasswordReset']);
-Route::get('/user/get_banks', [GetBankController::class, 'getBanks']);
-Route::get('/user/get_referral', [UserReferralController::class, 'getReferral']);
+
 // Route::get('/static', function () {
 //     echo VerifyUserAccountDetails::verifyBankDetails();
 // });
 
 Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
+
     Route::get('/user/profile', [UserController::class, 'profileDetails']);
     Route::get('/user/personal_user', [UserController::class, 'getActiveUser']);
     Route::post('/user/update_profile', [UserController::class, 'UpdateprofileDetails']);
@@ -59,7 +61,7 @@ Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
     Route::get('/user/loan_repayment', [RepaymentController::class, 'repayLoan']);
     Route::get('/user/get_wallet', [WalletController::class, 'getUserWallet']);
     Route::get('/user/bank_account', [UserController::class, 'getUserAccount']);
-    Route::post('/logout', [UserController::class, 'logout']);
+    Route::post('user/logout', [UserController::class, 'logout']);
     Route::post('/user/request_loan', [LoanController::class, 'requestLoan']);
     Route::get('/user/get_loan', [LoanController::class, 'getUserLoan']);
     Route::get('user/get_members', [MembersUserController::class, 'getMemberDetails']);
@@ -71,6 +73,9 @@ Route::group(["middleware" => ['auth:sanctum', 'is_user']], function () {
     Route::get('/user/latest_contribution', [UserDashboardController::class, 'recentContribution']);
     Route::post('/user/bvn', [UserVerificationController::class, 'verifyBvn']);
     Route::post('/user/nin', [UserVerificationController::class, 'verifyNin']);
+    Route::get('/user/get_banks', [GetBankController::class, 'getBanks']);
+    Route::get('/user/get_referral', [UserReferralController::class, 'getReferral']);
+    Route::get('/user/get_notification', [UserReferralController::class, 'getN']);
 });
 
 Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
@@ -85,12 +90,13 @@ Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
 
     Route::get('/admin/get_members', [MembersController::class, 'getMemberDetails']);
     Route::get('/admin/get_loan', [LoanControllerAdmin::class, 'getAllLoan']);
+    Route::get('/admin/pending_loan', [LoanControllerAdmin::class, 'getPendingLoan']);
     Route::get('/admin/get_loan/{id}', [LoanControllerAdmin::class, 'getSingleLoan']);
     Route::post('/admin/create_loan', [LoanControllerAdmin::class, 'createLoanUser']);
     Route::get('/admin/loan_repayment', [RepaymentController::class, 'repayLoan']);
     Route::get('/admin/get_single/{id}', [RepaymentController::class, 'getSingleRepayment']);
     Route::post('/admin/loan_repayment', [RepaymentController::class, 'createLoanRepayment']);
-    Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
+    // Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
     Route::get('admin/get_interest', [AdminInterestController::class, 'getInterest']);
     Route::post('admin/add_interest', [AdminInterestController::class, 'createInterest']);
 
@@ -100,6 +106,7 @@ Route::group(["middleware" => ['auth:sanctum', "is_admin"]], function () {
     Route::get('admin/get_single_user/{id}', [AdminCreateUsers::class, 'getSingleUser']);
     Route::put('admin/approve_loan/{id}', [LoanControllerAdmin::class, 'approveLoan']);
 });
+Route::post('/payment_webhooks', [webHookController::class, 'paymentWebhook']);
 Route::get('/admin/dashboard_summary', [AdminDashboardSummary::class, 'dashboardSummary']);
 Route::get('/admin/get_banks', [BankDetailController::class, 'getBanks']);
 Route::get('/admin/get_account', [BankDetailController::class, 'getAccontNumber']);
@@ -108,6 +115,9 @@ Route::get('/admin/reward', [ReferralController::class, 'getReferralRwardPercent
 Route::put('admin/update_referral/{id}', [ReferralController::class, 'updateReferralReward']);
 
 Route::get('/admin/excel_contribution', [ContributionController::class, 'exportContribution']);
+Route::post('/admin/bulkemail', [BulkEmailController::class, 'sendBulkEmail']);
+Route::post('/admin/notification', [AdminNotificationController::class, 'sendNotification']);
+Route::get('/admin/notification', [AdminNotificationController::class, 'getAllUserNotification']);
 // Route::put('/admin/users/{id}', [UserSettingsController::class, 'editUser']);
 // Route::delete('/admin/users/{id}', [UserSettingsController::class, 'deleteUser']);
 // Route::post('/admin/deposit', [AdminSavingController::class, 'savedeposit']);

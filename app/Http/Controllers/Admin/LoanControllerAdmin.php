@@ -54,6 +54,40 @@ class LoanControllerAdmin extends Controller
         }
     }
 
+    public function getPendingLoan(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $search = $request->input('search');
+            $query = CpLoan::query();
+            $query->where('status', 'pending');
+
+            if ($search) {
+                $query->where(
+                    function ($q) use ($search) {
+                        $q->where('loan_number', 'like', "%$search%")
+                            ->orWhere('status', 'like', "%$search%");
+                    }
+                );
+            }
+
+            if ($status = $request->input('status')) {
+                $query->where('status', $status); // assuming "active", "inactive", etc.
+            }
+            $getLoan = $query->paginate($perPage);
+            return response()->json([
+                "status" => true,
+                "loans" => AdminLoanResource::collection($getLoan)->response()->getData(true),
+
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
+
 
     public function approveLoan(Request $request, $id)
     {
@@ -61,10 +95,8 @@ class LoanControllerAdmin extends Controller
 
             $validator = Validator::make($request->all(), [
 
-                'guarantor_user_id' => 'required|string',
+                'guarantor_user_id' => 'required',
                 'status' => 'required|in:pending,approved,disbursed,rejected,defaulted,completed,defaulted',
-
-
             ]);
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
@@ -73,14 +105,32 @@ class LoanControllerAdmin extends Controller
             $findLoan = CpLoan::find($id);
             if (!$findLoan) {
                 return response()->json([
-                    'status' => true,
+                    'status' => false,
                     "message" => 'Loan not found'
 
                 ], 404);
             }
 
-            $lookupGurantor = User::find($request->guarantor_user_id);
+            if (!empty($findLoan->approved_by) && $findLoan->status == 'completed') {
+                return response()->json([
+                    'status' => false,
+                    "message" => "This loan is already Completed you can't edit it again"
+
+                ], 500);
+            }
+
+            $lookupGurantor = User::where('id', $request->guarantor_user_id)->first();
+            $compareOwner = User::where('id', $findLoan->user_id)->first();
             $getUserLoan = User::find($findLoan->user_id);
+            $loanAmount = Crypt::decryptString($findLoan->amount);
+
+            if ($lookupGurantor->id === $compareOwner->id || $lookupGurantor->email === $compareOwner->email) {
+                return response()->json([
+                    'status' => true,
+                    "message" => "Invalid. You can't use same person as a guarantor"
+
+                ], 404);
+            }
             if (!$lookupGurantor) {
                 return response()->json([
                     'status' => true,
@@ -88,6 +138,30 @@ class LoanControllerAdmin extends Controller
 
                 ], 404);
             }
+
+            //Loan Owner Details
+            $loanAmount = Crypt::decryptString($findLoan->amount);
+            $checkMaybeLoanOwner = CpMember::where('user_id', $findLoan->user_id)->where('status', 'active')->first();
+
+            $decryptUserShares = Crypt::decryptString($checkMaybeLoanOwner->total_shares);
+            $decryptUserSavings = Crypt::decryptString($checkMaybeLoanOwner->total_savings);
+            $checkRealMoneyDifferent = bcadd($decryptUserShares, $decryptUserSavings, 2);
+            $subLoanDifference = bcsub($loanAmount, $checkRealMoneyDifferent);
+            //Guarantor details
+            $checkMaybeGuarantor = CpMember::where('user_id', $request->guarantor_user_id)->where('status', 'active')->first();
+            $decryptShares = Crypt::decryptString($checkMaybeGuarantor->total_shares);
+            $decryptSavings = Crypt::decryptString($checkMaybeGuarantor->total_savings);
+            $sumSavingShares = bcadd($decryptShares, $decryptSavings, 2);
+            //  return [$sumSavingShares, $subLoanDifference];
+
+
+            if ((float) $sumSavingShares <= 0 || (float) $sumSavingShares < (float) $subLoanDifference) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Guarantor amount is insufficient. Loan cannot be granted.',
+                ], 400);
+            }
+
             $findLoan->update([
                 "status" => $request->status,
                 "guarantor_user_id" => $request->guarantor_user_id,
@@ -100,7 +174,7 @@ class LoanControllerAdmin extends Controller
 
             return response()->json([
                 'status' => true,
-                "message" => "Loan updated successfully",
+                "message" => "Loan status changed to" . " " . $request->status . " " . "successfully",
 
             ], 200);
         } catch (\Exception $e) {

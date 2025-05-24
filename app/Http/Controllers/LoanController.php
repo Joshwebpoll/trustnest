@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\UserLoanResource;
 use App\Mail\LoanEmailToAdmin;
 use App\Mail\LoanEmailToUser;
+use App\Models\AccountDetail;
 use App\Models\CpInterestRate;
 use App\Models\CpLoan;
 use App\Models\CpMember;
@@ -45,7 +46,7 @@ class LoanController extends Controller
                 return response()->json([
                     "status" => false,
                     'message' => 'You already have an existing loan application or active loan.'
-                ], 409);
+                ], 500);
             }
 
             //Get User Wallet Balance, May Use this Later
@@ -53,18 +54,20 @@ class LoanController extends Controller
             // $totalContributions = Crypt::decryptString($getUserAmount->wallet_balance);
 
             //Get Members Shares and Savings
+
             $getMembers = CpMember::where('user_id', $user_id)->where('status', 'active')->first();
             $sumSavings = Crypt::decryptString($getMembers->total_shares);
             $sumShares = Crypt::decryptString($getMembers->total_savings);
             $totalContributions = bcadd($sumSavings, $sumShares, 2);
+            $getAcctNumber = AccountDetail::where('user_id', $user_id)->first();
 
             // Check if loan amount is within double the contribution
-            // if ($request->amount > ($totalContributions * 2)) {
-            //     return response()->json([
-            //         "status" => false,
-            //         'message' => 'You can only borrow up to double your contributions.'
-            //     ], 400);
-            // }
+            if ($request->amount >= ($totalContributions * 2)) {
+                return response()->json([
+                    "status" => false,
+                    'message' => 'You can only borrow up to double your contributions.'
+                ], 400);
+            }
 
             $user = User::find($user_id);
 
@@ -78,15 +81,16 @@ class LoanController extends Controller
             //     ], 403);
             // }
             if (!$interestRate) {
-                return response()->json(['message' => 'No interest rate set.'], 400);
+                return response()->json(['status' => false, 'message' => 'No interest rate set.'], 500);
             }
-            $requestedAmount = $request->amount * 2;
+            $requestedAmount = bcmul($request->amount, 2, 2);
             // Calculate total payable (loan amount + interest)
-            $totalPayable = $requestedAmount + ($requestedAmount * ($interestRate->interest_rate / 100));
-            $durationMonths = 12;
+            $totalPayable = $requestedAmount + ($requestedAmount * (intval($interestRate->interest_rate) / 100));
+            $durationMonths =  $interestRate->loan_duration;  //intval($interestRate->loan_duration); //12;
             $monthlyRepayment = $totalPayable / $durationMonths;
+            $remainingBalance = bcmul($request->amount, 2, 2);
             $startDate = Carbon::now(); // loan starts now
-            $endDate = $startDate->copy()->addMonths($durationMonths); //load ends in
+            $endDate = $startDate->copy()->addMonths(intval($durationMonths)); //load ends in
 
             $loan = CpLoan::create([
                 "user_id" => $user_id,
@@ -96,11 +100,17 @@ class LoanController extends Controller
                 "duration_months" => $durationMonths,
                 'monthly_repayment' => Crypt::encryptString($monthlyRepayment),
                 "total_payable" => Crypt::encryptString($totalPayable),
-                "remaining_balance" => Crypt::encryptString($totalPayable),
+                "decreasing_amount" => Crypt::encryptString($requestedAmount),
+                "increasing_amount" => Crypt::encryptString(0),
+                "remaining_balance" => Crypt::encryptString($remainingBalance),
                 "total_paid" => Crypt::encryptString(0),
+                "total_interest_paid" => Crypt::encryptString(0),
+                "over_paid" => Crypt::encryptString(0),
+                "customer_account_number" => $getAcctNumber->account_number,
+                "membership_number" => $getMembers->membership_number,
                 "start_date" => $startDate,
                 "end_date" => $endDate,
-                'application_date' => now(),
+                'application_date' => Carbon::now(),
                 'purpose' => $request->purpose
             ]);
 
@@ -113,8 +123,7 @@ class LoanController extends Controller
             return response()->json([
                 "status" => true,
                 'message' => "Your loan application was successful.",
-
-
+                'loans' => $loan
 
             ], 201);
         } catch (\Exception $e) {

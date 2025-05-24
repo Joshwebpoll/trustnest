@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CpRepayment extends Model
 {
-    protected $fillable = ['loan_id', 'user_id', 'repayment_amount', "remaining_balance", 'transaction_reference', 'payment_method', 'interest_component', 'due_date', 'repayment_date', 'status', 'comment', "updatedById", "updatedEmail", 'updatedName'];
+    protected $fillable = ['loan_id', 'user_id', 'repayment_amount', "remaining_balance", 'transaction_reference', 'payment_method', 'interest_component', 'due_date', 'repayment_date', 'status', 'comment', "updatedById", "updatedEmail", 'updatedName', 'interest_paid'];
 
     protected $casts = [
         'repayment_date' => 'date',
